@@ -56,6 +56,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "styles/style_dialogs.h"
 #include "styles/style_chat_helpers.h"
 #include "styles/style_menu_icons.h"
+#include "ayu/features/hidden_users/ayu_hidden_users.h"
 
 namespace {
 
@@ -578,6 +579,10 @@ std::unique_ptr<PeerListRow> ChatsListBoxController::createSearchRow(
 }
 
 bool ChatsListBoxController::appendRow(not_null<History*> history) {
+	// Skip hidden users from visualization in lists
+	if (history->peer->isUser() && Ayu::HiddenUsers::IsHidden(history->peer->id.value)) {
+		return false;
+	}
 	if (auto row = delegate()->peerListFindRow(history->peer->id.value)) {
 		updateRowHook(static_cast<Row*>(row));
 		return false;
@@ -830,6 +835,10 @@ void ContactsBoxController::sortByOnline() {
 }
 
 bool ContactsBoxController::appendRow(not_null<UserData*> user) {
+	// Skip hidden users from visualization in lists
+	if (Ayu::HiddenUsers::IsHidden(user->id.value)) {
+		return false;
+	}
 	if (auto row = delegate()->peerListFindRow(user->id.value)) {
 		updateRowHook(row);
 		return false;
