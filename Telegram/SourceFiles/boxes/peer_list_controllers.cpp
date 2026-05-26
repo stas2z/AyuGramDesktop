@@ -575,6 +575,8 @@ QString ChatsListBoxController::emptyBoxText() const {
 
 std::unique_ptr<PeerListRow> ChatsListBoxController::createSearchRow(
 		not_null<PeerData*> peer) {
+	// Allow hidden users in search results (to open chat), but not in regular lists
+	// Hidden users are already filtered in appendRow()
 	return createRow(peer->owner().history(peer));
 }
 
