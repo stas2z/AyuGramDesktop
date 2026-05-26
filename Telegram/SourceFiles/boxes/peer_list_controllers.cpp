@@ -57,6 +57,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "styles/style_chat_helpers.h"
 #include "styles/style_menu_icons.h"
 #include "ayu/features/hidden_users/ayu_hidden_users.h"
+#include "hidden_users_manager.h"
 
 namespace {
 
@@ -581,8 +582,9 @@ std::unique_ptr<PeerListRow> ChatsListBoxController::createSearchRow(
 }
 
 bool ChatsListBoxController::appendRow(not_null<History*> history) {
-	// Skip hidden users from visualization in lists
-	if (history->peer->isUser() && Ayu::HiddenUsers::IsHidden(history->peer->id.value)) {
+	// Skip hidden users from visualization in lists (but allow in search results)
+	if (history->peer->isUser() && HiddenUsersManager::Instance().isHidden(history->peer->id)) {
+		qDebug() << "[HiddenUsers] Skipping hidden user in chats list:" << history->peer->id.value;
 		return false;
 	}
 	if (auto row = delegate()->peerListFindRow(history->peer->id.value)) {
@@ -837,8 +839,9 @@ void ContactsBoxController::sortByOnline() {
 }
 
 bool ContactsBoxController::appendRow(not_null<UserData*> user) {
-	// Skip hidden users from visualization in lists
-	if (Ayu::HiddenUsers::IsHidden(user->id.value)) {
+	// Skip hidden users from visualization in lists (but allow in search results)
+	if (HiddenUsersManager::Instance().isHidden(user->id)) {
+		qDebug() << "[HiddenUsers] Skipping hidden user in contacts list:" << user->id.value;
 		return false;
 	}
 	if (auto row = delegate()->peerListFindRow(user->id.value)) {
