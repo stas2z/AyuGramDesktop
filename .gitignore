@@ -1,14 +1,5 @@
 ```
-# Build artifacts
-*.o
-*.obj
-*.a
-*.lib
-*.dll
-*.so
-*.dylib
-*.exe
-*.out
+
 
 # CMake build directories
 build/

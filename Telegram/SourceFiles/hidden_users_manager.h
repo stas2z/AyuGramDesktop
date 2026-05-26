@@ -1,8 +1,8 @@
 #pragma once
 
-#include "base/unique_func.h"
-#include "data/peer_id.h"
+#include "data/data_peer_id.h"
 #include <QSet>
+#include <QString>
 
 class HiddenUsersManager {
 public:
