@@ -1,63 +1,18 @@
 ```
-# Environment files
-.env
-.env.local
-*.env.*
-
-# Logs and temporary files
-*.log
-*.tmp
-
-# Build artifacts
+# CMake build directories
 build/
-dist/
-*.o
-*.obj
+Telegram/build/
+
+# CMake cache and temporary files
+CMakeCache.txt
+CMakeFiles/
+cmake.check_cache
+
+# Compiler artifacts
+*.bin
 *.out
+*.log
 
-# Dependencies
-node_modules/
-.venv/
-venv/
-__pycache__/
-*.egg-info/
-
-# Editors/IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS specific
-.DS_Store
-Thumbs.db
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Compression artifacts
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+# Temporary files
+*.tmp
 ```

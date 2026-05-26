@@ -1,6 +1,5 @@
-// HiddenUsersManager.cpp
-
 #include "hidden_users_manager.h"
+#include "data/data_peer_id.h"
 #include "ayu/features/hidden_users/ayu_hidden_users.h"
 #include <QFile>
 #include <QTextStream>
@@ -9,6 +8,7 @@
 #include <QDebug>
 #include <QSet>
 #include <QStandardPaths>
+#include <algorithm>
 
 namespace {
 
@@ -57,7 +57,7 @@ void HiddenUsersManager::loadFromFile() {
     }
     
     QTextStream in(&file);
-    in.setCodec("UTF-8");
+    in.setEncoding(QStringConverter::Utf8);
     
     int lineNumber = 0;
     int validCount = 0;
@@ -93,7 +93,7 @@ void HiddenUsersManager::loadFromFile() {
     
     // Выводим первые несколько ID для отладки
     auto list = _hiddenUserIds.values();
-    const int previewCount = std::min(10, list.size());
+    const int previewCount = std::min<int>(10, list.size());
     if (previewCount > 0) {
         qDebug() << "[HiddenUsers] First" << previewCount << "IDs:";
         for(int i = 0; i < previewCount; ++i) {
@@ -103,12 +103,12 @@ void HiddenUsersManager::loadFromFile() {
 }
 
 bool HiddenUsersManager::isHidden(PeerId peerId) const {
-    if (peerId.peerType != PeerIdType::User) {
+    if (!peerId.isUserId()) {
         return false;
     }
     
     // Получаем bare ID пользователя
-    const auto userId = peerId.bare();
+    const auto userId = peerId.value;
     
     bool result = _hiddenUserIds.contains(userId);
     if (result) {
