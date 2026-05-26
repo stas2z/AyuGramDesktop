@@ -1,5 +1,5 @@
 ```
-# Environment
+# Environment files
 .env
 .env.local
 *.env.*
@@ -7,30 +7,28 @@
 # Logs and temporary files
 *.log
 *.tmp
-*.swp
-
-# Editors
-.vscode/
-.idea/
 
 # Build artifacts
+build/
+dist/
 *.o
 *.obj
 *.out
 
 # Dependencies
 node_modules/
-venv/
 .venv/
+venv/
 __pycache__/
-.mypy_cache/
-.pytest_cache/
-dist/
-build/
-target/
-.gradle/
+*.egg-info/
 
-# System files
+# Editors/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS specific
 .DS_Store
 Thumbs.db
 
@@ -39,7 +37,7 @@ coverage/
 htmlcov/
 .coverage
 
-# Compressed files
+# Compression artifacts
 *.zip
 *.gz
 *.tar
