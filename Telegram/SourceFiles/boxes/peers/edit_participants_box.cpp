@@ -45,6 +45,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "styles/style_boxes.h"
 #include "styles/style_chat.h"
 #include "styles/style_menu_icons.h"
+#include "ayu/features/hidden_users/ayu_hidden_users.h"
 
 namespace {
 
@@ -1203,6 +1204,8 @@ void ParticipantsBoxController::peerListSearchAddRow(
 
 std::unique_ptr<PeerListRow> ParticipantsBoxController::createSearchRow(
 		not_null<PeerData*> peer) {
+	// Allow hidden users in search results (to open chat or add to group)
+	// They are filtered out in appendRow/prependRow for regular lists
 	if (_role == Role::Profile
 		|| _role == Role::Members
 		|| _role == Role::Admins) {
@@ -2229,6 +2232,12 @@ void ParticipantsBoxController::removeKicked(
 }
 
 bool ParticipantsBoxController::appendRow(not_null<PeerData*> participant) {
+	// Skip hidden users from visualization in lists (but allow in search results)
+	if (participant->isUser() && HiddenUsersManager::Instance().isHidden(participant->id)) {
+		qDebug() << "[HiddenUsers] Skipping hidden user in participants list:" << participant->id.value;
+		return false;
+	}
+	
 	if (delegate()->peerListFindRow(participant->id.value)) {
 		recomputeTypeFor(participant);
 		return false;
@@ -2247,6 +2256,12 @@ bool ParticipantsBoxController::appendRow(not_null<PeerData*> participant) {
 }
 
 bool ParticipantsBoxController::prependRow(not_null<PeerData*> participant) {
+	// Skip hidden users from visualization in lists (but allow in search results)
+	if (participant->isUser() && HiddenUsersManager::Instance().isHidden(participant->id)) {
+		qDebug() << "[HiddenUsers] Skipping hidden user in participants prepend:" << participant->id.value;
+		return false;
+	}
+	
 	if (const auto row = delegate()->peerListFindRow(participant->id.value)) {
 		recomputeTypeFor(participant);
 		refreshCustomStatus(row);

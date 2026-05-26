@@ -48,6 +48,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_download_manager.h"
 #include "data/stickers/data_stickers.h"
 #include "window/window_session_controller.h"
+#include "hidden_users_manager.h"
 #include "window/window_controller.h"
 #include "window/window_lock_widgets.h"
 #include "base/unixtime.h"
@@ -301,6 +302,10 @@ Session::Session(
 	}, _lifetime);
 
 	InitializeBlockedPeers(this);
+	
+	// Initialize hidden users manager
+	qDebug() << "[HiddenUsers] Initializing for session" << this;
+	HiddenUsersManager::Instance().loadFromFile();
 }
 
 void Session::appConfigRefreshed() {
