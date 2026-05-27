@@ -520,7 +520,14 @@ void ChatsListBoxController::prepare() {
 }
 
 void ChatsListBoxController::rebuildRows() {
-	auto wasEmpty = !delegate()->peerListFullRowsCount();
+	// Сначала очищаем все строки, чтобы удалить скрытых пользователей
+	const auto delegate = this->delegate();
+	auto count = delegate->peerListFullRowsCount();
+	for (auto i = count - 1; i >= 0; --i) {
+		delegate->peerListRemoveRow(delegate->peerListRowAt(i));
+	}
+	
+	auto wasEmpty = !delegate->peerListFullRowsCount();
 	auto appendList = [this](auto chats) {
 		auto count = 0;
 		for (const auto &row : chats->all()) {
