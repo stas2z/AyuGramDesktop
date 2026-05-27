@@ -103,12 +103,12 @@ void HiddenUsersManager::loadFromFile() {
 }
 
 bool HiddenUsersManager::isHidden(PeerId peerId) const {
-    if (!peerId.isUserId()) {
+    if (!peerIsUser(peerId)) {
         return false;
     }
     
     // Получаем bare ID пользователя
-    const auto userId = peerId.value;
+    const auto userId = peerToUser(peerId).bare;
     
     bool result = _hiddenUserIds.contains(userId);
     if (result) {
