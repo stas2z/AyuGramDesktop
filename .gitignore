@@ -1,5 +1,5 @@
 ```
-# Build system
+# Build artifacts
 build/
 CMakeCache.txt
 
@@ -7,46 +7,25 @@ CMakeCache.txt
 node_modules/
 venv/
 .venv/
-__pycache__/
-*.egg-info/
 
 # Compiled files
 *.o
 *.obj
+*.a
 *.so
 *.dll
 *.exe
-*.pyc
-*.class
 
-# Logs
+# Logs and temp files
 *.log
+*.tmp
+
+# Editors
+.vscode/
+.idea/
 
 # Environment
 .env
 .env.local
 *.env.*
-
-# Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Distribution
-dist/
-target/
-.gradle/
-.mypy_cache/
-.pytest_cache/
 ```
