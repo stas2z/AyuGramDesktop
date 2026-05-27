@@ -14,6 +14,7 @@
 #include <QTextStream>
 #include <QDir>
 #include <QStandardPaths>
+#include <QStringConverter>
 
 namespace Ayu::HiddenUsers {
 namespace {
@@ -49,7 +50,7 @@ void LoadFromFile(const QString &filePath) {
 	}
 	
 	QTextStream in(&file);
-	in.setCodec("UTF-8");
+	in.setEncoding(QStringConverter::Utf8);
 	int lineNumber = 0;
 	while (!in.atEnd()) {
 		lineNumber++;
