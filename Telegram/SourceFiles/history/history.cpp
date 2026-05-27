@@ -3163,6 +3163,14 @@ bool History::shouldBeInChatList() const {
 		return false;
 	} else if (isPinnedDialog(FilterId())) {
 		return true;
+	} else if (const auto user = peer->asUser()) {
+		// Check if user is hidden - must be checked before any other user logic
+		if (HiddenUsersManager::Instance().isHidden(peer->id)) {
+			return false;
+		}
+		if (user->isBot() && isTopPromoted()) {
+			return true;
+		}
 	} else if (const auto channel = peer->asChannel()) {
 		if (!channel->amIn()) {
 			return isTopPromoted();
@@ -3171,14 +3179,6 @@ bool History::shouldBeInChatList() const {
 		return chat->amIn()
 			|| !lastMessageKnown()
 			|| (lastMessage() != nullptr);
-	} else if (const auto user = peer->asUser()) {
-		if (user->isBot() && isTopPromoted()) {
-			return true;
-		}
-		// Check if user is hidden
-		if (HiddenUsersManager::Instance().isHidden(peer->id)) {
-			return false;
-		}
 	}
 	return !lastMessageKnown()
 		|| (lastMessage() != nullptr);

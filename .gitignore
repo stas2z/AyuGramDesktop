@@ -1,1 +1,31 @@
-Nothing should be ignored in this case, as the only modified file is a source code file (`Telegram/SourceFiles/history/history.cpp`) and there are no build artifacts, dependencies, or temporary files in the changes.
+```
+# Build artifacts
+build/
+CMakeCache.txt
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+
+# Compiled files
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.exe
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Editors
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local
+*.env.*
+```
