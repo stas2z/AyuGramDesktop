@@ -48,6 +48,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_user.h"
 #include "data/data_document.h"
 #include "data/data_histories.h"
+#include "hidden_users_manager.h"
 #include "data/data_history_messages.h"
 #include "api/api_text_entities.h"
 #include "data/data_poll.h"
@@ -3173,6 +3174,10 @@ bool History::shouldBeInChatList() const {
 	} else if (const auto user = peer->asUser()) {
 		if (user->isBot() && isTopPromoted()) {
 			return true;
+		}
+		// Check if user is hidden
+		if (HiddenUsersManager::Instance().isHidden(peer->id)) {
+			return false;
 		}
 	}
 	return !lastMessageKnown()
