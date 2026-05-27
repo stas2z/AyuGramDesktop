@@ -1,1 +1,52 @@
-Nothing should be ignored in this case, as the only modified file is a source code file (`Telegram/SourceFiles/history/history.cpp`) and there are no build artifacts, dependencies, or temporary files in the changes.
+```
+# Build system
+build/
+CMakeCache.txt
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.egg-info/
+
+# Compiled files
+*.o
+*.obj
+*.so
+*.dll
+*.exe
+*.pyc
+*.class
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Distribution
+dist/
+target/
+.gradle/
+.mypy_cache/
+.pytest_cache/
+```
