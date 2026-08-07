@@ -19,7 +19,7 @@ RUN dnf -y install epel-release \
 		pulseaudio-libs-devel mesa-libGL-devel mesa-libEGL-devel mesa-libgbm-devel \
 		libdrm-devel vulkan-devel libva-devel libvdpau-devel libselinux-devel \
 		libmount-devel systemd-devel glib2-devel gobject-introspection-devel \
-		at-spi2-core-devel gtk3-devel \
+		at-spi2-core-devel gtk3-devel ccache \
 	&& dnf clean all
 
 RUN alternatives --set python3 /usr/bin/python3.11
@@ -39,6 +39,9 @@ RUN sed -i 's/-lharfbuzz//' /usr/lib64/pkgconfig/harfbuzz.pc
 RUN sed -i 's/-lpng16//' /usr/lib64/pkgconfig/libpng16.pc
 RUN echo set debuginfod enabled on > /opt/rh/$TOOLSET/root/etc/gdbinit.d/00-debuginfod.gdb
 RUN adduser user
+
+ENV CCACHE_DIR=/root/.ccache
+RUN mkdir -p $CCACHE_DIR && chmod 1777 $CCACHE_DIR
 
 WORKDIR /usr/src
 ENV AR=gcc-ar
@@ -328,16 +331,6 @@ RUN git clone -b v0.11.2 --depth=1 https://github.com/libjxl/libjxl.git \
 	&& sed -i 's/-lstdc++//' $DESTDIR/usr/local/lib64/pkgconfig/libjxl*.pc \
 	&& cd .. \
 	&& rm -rf libjxl
-
-FROM builder AS rnnoise
-RUN git clone -b v0.2 --depth=1 https://github.com/xiph/rnnoise.git \
-	&& cd rnnoise \
-	&& ./autogen.sh \
-	&& ./configure --enable-static --disable-shared \
-	&& make -j$(nproc) \
-	&& make DESTDIR=/usr/src/rnnoise-cache install \
-	&& cd .. \
-	&& rm -rf rnnoise
 
 FROM builder AS xcb-proto
 RUN git clone -b xcb-proto-1.16.0 --depth=1 https://github.com/gitlab-freedesktop-mirrors/xcbproto.git \
@@ -863,7 +856,6 @@ COPY --link --from=webp /usr/src/webp-cache /
 COPY --link --from=avif /usr/src/avif-cache /
 COPY --link --from=heif /usr/src/heif-cache /
 COPY --link --from=jxl /usr/src/jxl-cache /
-COPY --link --from=rnnoise /usr/src/rnnoise-cache /
 COPY --link --from=xcb /usr/src/xcb-cache /
 COPY --link --from=xcb-wm /usr/src/xcb-wm-cache /
 COPY --link --from=xcb-util /usr/src/xcb-util-cache /

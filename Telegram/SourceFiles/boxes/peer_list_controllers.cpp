@@ -520,51 +520,62 @@ void ChatsListBoxController::prepare() {
 }
 
 void ChatsListBoxController::rebuildRows() {
-	// Сначала очищаем все строки, чтобы удалить скрытых пользователей
-	const auto delegate = this->delegate();
-	auto count = delegate->peerListFullRowsCount();
-	for (auto i = count - 1; i >= 0; --i) {
-		delegate->peerListRemoveRow(delegate->peerListRowAt(i));
-	}
-	
-	auto wasEmpty = !delegate->peerListFullRowsCount();
-	auto appendList = [this](auto chats) {
-		auto count = 0;
-		for (const auto &row : chats->all()) {
-			if (const auto history = row->history()) {
-				if (appendRow(history)) {
-					++count;
-				}
-			}
-		}
-		return count;
-	};
-	auto added = 0;
-	if (!savedMessagesChatStatus().isEmpty()) {
-		if (appendRow(session().data().history(session().user()))) {
-			++added;
-		}
-	}
-	added += appendList(session().data().chatsList()->indexed());
-	const auto id = Data::Folder::kId;
-	if (const auto folder = session().data().folderLoaded(id)) {
-		added += appendList(folder->chatsList()->indexed());
-	}
-	added += appendList(session().data().contactsNoChatsList());
-	if (!wasEmpty && added > 0) {
-		// Place dialogs list before contactsNoDialogs list.
-		delegate()->peerListPartitionRows([](const PeerListRow &a) {
-			const auto history = static_cast<const Row&>(a).history();
-			return history->inChatList();
-		});
-		if (!savedMessagesChatStatus().isEmpty()) {
-			delegate()->peerListPartitionRows([](const PeerListRow &a) {
-				return a.peer()->isSelf();
-			});
-		}
-	}
-	checkForEmptyRows();
-	delegate()->peerListRefreshRows();
+        // Сначала удаляем строки со скрытыми пользователями
+        const auto delegate = this->delegate();
+        auto count = (*delegate).peerListFullRowsCount();
+        // Collect rows to remove first, then remove them.
+        // Removing inside the index loop causes index shifting and
+        // potential out-of-bounds access / use-after-free crashes.
+        auto rowsToRemove = std::vector<not_null<PeerListRow*>>();
+        rowsToRemove.reserve(count);
+        for (auto i = count - 1; i >= 0; --i) {
+                const auto row = (*delegate).peerListRowAt(i);
+                const auto peer = row->peer();
+                if (peer->isUser() && HiddenUsersManager::Instance().isHidden(peer->id)) {
+                        rowsToRemove.push_back(row);
+                }
+        }
+        for (const auto row : rowsToRemove) {
+                (*delegate).peerListRemoveRow(row);
+        }
+        auto wasEmpty = !(*delegate).peerListFullRowsCount();
+        auto appendList = [this](auto chats) {
+                auto count = 0;
+                for (const auto &row : chats->all()) {
+                        if (const auto history = row->history()) {
+                                if (appendRow(history)) {
+                                        ++count;
+                                }
+                        }
+                }
+                return count;
+        };
+        auto added = 0;
+        if (!savedMessagesChatStatus().isEmpty()) {
+                if (appendRow(session().data().history(session().user()))) {
+                        ++added;
+                }
+        }
+        added += appendList(session().data().chatsList()->indexed());
+        const auto id = Data::Folder::kId;
+        if (const auto folder = session().data().folderLoaded(id)) {
+                added += appendList(folder->chatsList()->indexed());
+        }
+        added += appendList(session().data().contactsNoChatsList());
+        if (!wasEmpty && added > 0) {
+                // Place dialogs list before contactsNoDialogs list.
+                (*delegate).peerListPartitionRows([](const PeerListRow &a) {
+                        const auto history = static_cast<const Row&>(a).history();
+                        return history->inChatList();
+                });
+                if (!savedMessagesChatStatus().isEmpty()) {
+                        (*delegate).peerListPartitionRows([](const PeerListRow &a) {
+                                return a.peer()->isSelf();
+                        });
+                }
+        }
+        checkForEmptyRows();
+        (*delegate).peerListRefreshRows();
 }
 
 void ChatsListBoxController::checkForEmptyRows() {

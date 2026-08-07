@@ -210,7 +210,6 @@ PRIVATE
     desktop-app::external_webrtc
     desktop-app::external_ffmpeg
     desktop-app::external_openssl
-    desktop-app::external_rnnoise
     desktop-app::external_zlib
 )
 
