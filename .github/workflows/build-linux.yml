@@ -1,144 +1,355 @@
-name: Build Linux
+name: AyuGram Linux
 
 on:
-  push:
-    branches: [main, dev]
-  pull_request:
-    branches: [main, dev]
   workflow_dispatch:
 
-env:
-  CONFIG: Release
-  CMAKE_BUILD_PARALLEL_LEVEL: 4
+  push:
+    branches:
+      - dev
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - "changelog.txt"
+      - "LEGAL"
+      - "LICENSE"
+
+concurrency:
+  group: ayugram-linux-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   build:
-    name: Build on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04]
+    name: Linux x86_64 Release
+    runs-on: ubuntu-latest
+
+    env:
+      IMAGE: ghcr.io/telegramdesktop/tdesktop/centos_env:latest
+      CCACHE_DIR: ${{ runner.temp }}/ayugram-ccache
 
     steps:
-      - name: Checkout repository
+      # ============================================================
+      # SOURCE
+      # ============================================================
+
+      - name: Checkout AyuGram
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
 
-      - name: Install dependencies
+      # ============================================================
+      # BUILD IMAGE
+      # ============================================================
+
+      - name: Pull build environment
+        id: image
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            cmake \
-            pkg-config \
-            libgl1-mesa-dev \
-            libxkbcommon-x11-0 \
-            libxcb-cursor-dev \
-            libxcb-cursor0 \
-            libdbus-1-dev \
-            libsystemd-dev \
-            libpulse-dev \
-            libasound2-dev \
-            libicu-dev \
-            libi2c-dev \
-            libjpeg-dev \
-            libpng-dev \
-            libtiff-dev \
-            libwebp-dev \
-            libopenal-dev \
-            libsndio-dev \
-            libavcodec-dev \
-            libavformat-dev \
-            libswscale-dev \
-            libgstreamer1.0-dev \
-            libgstreamer-plugins-base1.0-dev \
-            libgstreamer-plugins-bad1.0-dev \
-            libzstd-dev \
-            libbrotli-dev \
-            libfreetype-dev \
-            libharfbuzz-dev \
-            libfontconfig1-dev \
-            libfribidi-dev \
-            libgcrypt20-dev \
-            libgpg-error-dev \
-            libdouble-conversion-dev \
-            libdlfcn-dev \
-            libnm-dev \
-            libicu-dev \
-            libglib2.0-dev \
-            libpcre2-dev \
-            libssl-dev \
-            libopus-dev \
-            libvpx-dev \
-            libx11-dev \
-            libxext-dev \
-            libxfixes-dev \
-            libxi-dev \
-            libxrender-dev \
-            libxshape-dev \
-            libxtst-dev \
-            libxkbcommon-dev \
-            libxcb1-dev \
-            libxcb-randr0-dev \
-            libxcb-shape0-dev \
-            libxcb-xfixes0-dev \
-            libxcb-sync-dev \
-            libxcb-xinerama0-dev \
-            libxcb-composite0-dev \
-            libxcb-render-util0-dev \
-            libxcb-glx0-dev \
-            libxcb-keysyms1-dev \
-            libxcb-image0-dev \
-            libxcb-shm0-dev \
-            libxcb-icccm4-dev \
-            libxcb-util0-dev \
-            libxcb-randr0-dev \
-            libxcb-glx0-dev \
-            libxcb-cursor-dev \
-            libnss3-dev \
-            libsecret-1-dev \
-            libhyphen-dev \
-            libicu-dev \
-            libjpeg-dev \
-            libpng-dev \
-            libbrotli-dev \
-            libzstd-dev \
-            liblz4-dev \
-            libenchant-2-dev \
-            libcap-dev \
-            libxss-dev \
-            libgtk-3-dev \
-            qt6-base-dev \
-            qt6-tools-dev \
-            qt6-image-formats-plugins \
-            qt6-wayland \
-            qt6-multimedia-dev \
-            qt6-websockets-dev \
-            qt6-svg-dev \
-            qt6-translations-l10n \
-            qt6-base-dev-tools \
-            qt6-tools-dev-tools \
-            qt6-base-private-dev
+          set -euo pipefail
 
-      - name: Configure project
-        working-directory: Telegram
+          docker pull "$IMAGE"
+
+          DIGEST="$(
+            docker inspect \
+              --format='{{index .RepoDigests 0}}' \
+              "$IMAGE" \
+            | sha256sum \
+            | cut -c1-16
+          )"
+
+          echo "key=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "Docker environment key: $DIGEST"
+
+      # ============================================================
+      # SUBMODULE FINGERPRINT
+      #
+      # Если AyuGram обновил lib_ui/codegen/lib_tl/etc,
+      # старый out лучше не использовать.
+      # ============================================================
+
+      - name: Calculate submodule fingerprint
+        id: submodules
+        shell: bash
         run: |
-          ./configure.sh \
-            -DDESKTOP_APP_USE_PACKAGED=OFF \
-            -DDESKTOP_APP_ENABLE_LTO=ON
+          set -euo pipefail
 
-      - name: Build project
+          HASH="$(
+            git submodule status --recursive \
+            | sha256sum \
+            | cut -c1-16
+          )"
+
+          echo "key=$HASH" >> "$GITHUB_OUTPUT"
+          echo "Submodules key: $HASH"
+
+      # ============================================================
+      # CCACHE
+      # ============================================================
+
+      - name: Restore ccache
+        id: ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+
+          key: >-
+            ayugram-ccache-${{
+              runner.os
+            }}-${{
+              steps.image.outputs.key
+            }}-${{
+              github.run_id
+            }}
+
+          restore-keys: |
+            ayugram-ccache-${{ runner.os }}-${{ steps.image.outputs.key }}-
+
+      # ============================================================
+      # CMAKE / OBJECT CACHE
+      #
+      # Меняем namespace кеша при:
+      # - обновлении Docker toolchain;
+      # - обновлении submodules;
+      # - изменении структуры CMake.
+      #
+      # Обычные изменения .cpp/.h кеш НЕ инвалидируют.
+      # ============================================================
+
+      - name: Restore incremental build
+        id: buildcache
+        uses: actions/cache/restore@v4
+        with:
+          path: out
+
+          key: >-
+            ayugram-out-${{
+              runner.os
+            }}-${{
+              steps.image.outputs.key
+            }}-${{
+              steps.submodules.outputs.key
+            }}-${{
+              hashFiles(
+                '**/CMakeLists.txt',
+                '**/*.cmake',
+                'Telegram/configure.py',
+                'Telegram/configure.sh'
+              )
+            }}-${{
+              github.run_id
+            }}
+
+          restore-keys: |
+            ayugram-out-${{ runner.os }}-${{ steps.image.outputs.key }}-${{ steps.submodules.outputs.key }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake', 'Telegram/configure.py', 'Telegram/configure.sh') }}-
+
+      # ============================================================
+      # FIX MTIMES FOR NINJA
+      #
+      # Без этого GitHub checkout делает исходники "новее"
+      # восстановленных object files.
+      # ============================================================
+
+      - name: Prepare incremental build
+        shell: bash
         run: |
-          cmake --build out --config ${{ env.CONFIG }} --target Telegram
+          set -euo pipefail
 
-      - name: Upload artifact
+          if [ ! -f out/.ci-cache-base-sha ]; then
+            echo "No previous incremental build found."
+            exit 0
+          fi
+
+          BASE_SHA="$(cat out/.ci-cache-base-sha)"
+
+          echo "Cached commit: $BASE_SHA"
+          echo "Current commit: $GITHUB_SHA"
+
+          if ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            echo "Cached commit is unavailable."
+            echo "Dropping out cache."
+            rm -rf out
+            exit 0
+          fi
+
+          if ! git merge-base --is-ancestor \
+            "$BASE_SHA" "$GITHUB_SHA"
+          then
+            echo "History diverged / branch was rebased."
+            echo "Dropping out cache."
+            rm -rf out
+            exit 0
+          fi
+
+          echo "Reusing previous CMake/Ninja build."
+
+          #
+          # Делаем сохранённые build outputs новее checkout-файлов.
+          #
+          find out -type f -exec touch {} +
+
+          #
+          # Затем реальные изменённые исходники делаем ещё новее.
+          #
+          sleep 1
+
+          echo "Changed files since cached build:"
+
+          git diff \
+            --name-only \
+            --diff-filter=ACMRTUXB \
+            "$BASE_SHA" \
+            "$GITHUB_SHA"
+
+          git diff \
+            --name-only \
+            --diff-filter=ACMRTUXB \
+            -z \
+            "$BASE_SHA" \
+            "$GITHUB_SHA" \
+          | while IFS= read -r -d '' file; do
+              if [ -f "$file" ]; then
+                touch "$file"
+              fi
+            done
+
+      # ============================================================
+      # BUILD
+      # ============================================================
+
+      - name: Build AyuGram
+        env:
+          API_ID: ${{ secrets.TDESKTOP_API_ID }}
+          API_HASH: ${{ secrets.TDESKTOP_API_HASH }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$CCACHE_DIR"
+
+          docker run --rm \
+            -u "$(id -u):$(id -g)" \
+            -v "$PWD:/usr/src/tdesktop" \
+            -v "$CCACHE_DIR:/var/cache/ccache" \
+            -e CONFIG=Release \
+            -e CCACHE_SLOPPINESS=pch_defines,time_macros \
+            "$IMAGE" \
+            env -u CCACHE_DISABLE \
+            /usr/src/tdesktop/Telegram/build/docker/centos_env/build.sh \
+              -D CMAKE_CONFIGURATION_TYPES=Release \
+              -D TDESKTOP_API_ID="$API_ID" \
+              -D TDESKTOP_API_HASH="$API_HASH"
+
+      # ============================================================
+      # CHECK
+      # ============================================================
+
+      - name: Check build
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ ! -f out/Release/Telegram ]; then
+            echo "ERROR: out/Release/Telegram not found"
+            exit 1
+          fi
+
+          echo
+          echo "Build successful:"
+          file out/Release/Telegram
+          ls -lh out/Release/Telegram
+
+      # ============================================================
+      # SAVE CURRENT COMMIT INTO OUT CACHE
+      # ============================================================
+
+      - name: Mark incremental build revision
+        shell: bash
+        run: |
+          echo "$GITHUB_SHA" > out/.ci-cache-base-sha
+
+      # ============================================================
+      # SAVE CCACHE
+      # ============================================================
+
+      - name: Save ccache
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+
+          key: >-
+            ayugram-ccache-${{
+              runner.os
+            }}-${{
+              steps.image.outputs.key
+            }}-${{
+              github.run_id
+            }}
+
+      # ============================================================
+      # SAVE OUT
+      # ============================================================
+
+      - name: Save incremental build
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: out
+
+          key: >-
+            ayugram-out-${{
+              runner.os
+            }}-${{
+              steps.image.outputs.key
+            }}-${{
+              steps.submodules.outputs.key
+            }}-${{
+              hashFiles(
+                '**/CMakeLists.txt',
+                '**/*.cmake',
+                'Telegram/configure.py',
+                'Telegram/configure.sh'
+              )
+            }}-${{
+              github.run_id
+            }}
+
+      # ============================================================
+      # PACKAGE
+      #
+      # tar.gz сохраняет executable bit.
+      # ============================================================
+
+      - name: Package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf package
+          mkdir package
+
+          cp out/Release/Telegram package/AyuGram
+          chmod +x package/AyuGram
+
+          tar \
+            -C package \
+            -czf AyuGram-Linux-x86_64.tar.gz \
+            AyuGram
+
+          ls -lh AyuGram-Linux-x86_64.tar.gz
+
+      # ============================================================
+      # ARTIFACT
+      # ============================================================
+
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: AyuGram-${{ matrix.os }}-${{ env.CONFIG }}
-          path: |
-            out/${{ env.CONFIG }}/AyuGram
-            out/${{ env.CONFIG }}/Updater
-            out/${{ env.CONFIG }}/Packer
-          retention-days: 7
+          name: AyuGram-Linux-x86_64
+          path: AyuGram-Linux-x86_64.tar.gz
+          compression-level: 0
+          retention-days: 14
+          if-no-files-found: error
