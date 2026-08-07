@@ -4,9 +4,8 @@ set -e
 cd Telegram
 ./configure.sh "$@"
 
-# Re-configure from out/ to pick up new .cpp files and lang.strings
-cd ../out
-cmake ../Telegram "$@"
+# Force lang regeneration by removing timestamp
+rm -f ../out/Telegram/gen/lang_auto.timestamp
 
 # Use ccache for faster incremental builds
 export CC="ccache gcc"
