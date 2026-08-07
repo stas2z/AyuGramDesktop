@@ -4,6 +4,9 @@ set -e
 cd Telegram
 ./configure.sh "$@"
 
+# Re-configure to pick up changes in lang.strings / CMakeLists.txt
+cmake .. "$@"
+
 # Use ccache for faster incremental builds
 export CC="ccache gcc"
 export CXX="ccache g++"
