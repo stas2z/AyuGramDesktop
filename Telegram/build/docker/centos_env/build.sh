@@ -4,8 +4,8 @@ set -e
 cd Telegram
 ./configure.sh "$@"
 
-# Re-configure from project root to pick up new .cpp files and lang.strings
-cd ..
+# Re-configure from out/ to pick up new .cpp files and lang.strings
+cd ../out
 cmake . "$@"
 
 # Use ccache for faster incremental builds
