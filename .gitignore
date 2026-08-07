@@ -23,6 +23,8 @@ venv/
 # Editors
 .vscode/
 .idea/
+cmake-build-debug/
+*.qsb
 
 # Environment
 .env
