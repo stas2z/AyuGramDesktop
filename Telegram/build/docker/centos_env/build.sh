@@ -6,7 +6,7 @@ cd Telegram
 
 # Re-configure from out/ to pick up new .cpp files and lang.strings
 cd ../out
-cmake . "$@"
+cmake ../Telegram "$@"
 
 # Use ccache for faster incremental builds
 export CC="ccache gcc"
