@@ -137,14 +137,14 @@ jobs:
                 '**/*.cmake',
                 'Telegram/configure.py',
                 'Telegram/configure.sh',
-                'Resources/langs/lang.strings'
+                'Telegram/Resources/langs/lang.strings'
               )
             }}-${{
               github.run_id
             }}
 
           restore-keys: |
-            ayugram-out-${{ runner.os }}-${{ steps.image.outputs.key }}-${{ steps.submodules.outputs.key }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake', 'Telegram/configure.py', 'Telegram/configure.sh', 'Resources/langs/lang.strings') }}-
+            ayugram-out-${{ runner.os }}-${{ steps.image.outputs.key }}-${{ steps.submodules.outputs.key }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake', 'Telegram/configure.py', 'Telegram/configure.sh', 'Telegram/Resources/langs/lang.strings') }}-
 
       # ============================================================
       # FIX MTIMES FOR NINJA
@@ -312,7 +312,7 @@ jobs:
                 '**/*.cmake',
                 'Telegram/configure.py',
                 'Telegram/configure.sh',
-                'Resources/langs/lang.strings'
+                'Telegram/Resources/langs/lang.strings'
               )
             }}-${{
               github.run_id
