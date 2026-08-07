@@ -236,7 +236,6 @@ jobs:
             -e CONFIG=Release \
             -e CCACHE_SLOPPINESS=pch_defines,time_macros \
             "$IMAGE" \
-            env -u CCACHE_DISABLE \
             /usr/src/tdesktop/Telegram/build/docker/centos_env/build.sh \
               -D CMAKE_CONFIGURATION_TYPES=Release \
               -D TDESKTOP_API_ID="$API_ID" \
