@@ -1,0 +1,144 @@
+name: Build Linux
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+env:
+  CONFIG: Release
+  CMAKE_BUILD_PARALLEL_LEVEL: 4
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            pkg-config \
+            libgl1-mesa-dev \
+            libxkbcommon-x11-0 \
+            libxcb-cursor-dev \
+            libxcb-cursor0 \
+            libdbus-1-dev \
+            libsystemd-dev \
+            libpulse-dev \
+            libasound2-dev \
+            libicu-dev \
+            libi2c-dev \
+            libjpeg-dev \
+            libpng-dev \
+            libtiff-dev \
+            libwebp-dev \
+            libopenal-dev \
+            libsndio-dev \
+            libavcodec-dev \
+            libavformat-dev \
+            libswscale-dev \
+            libgstreamer1.0-dev \
+            libgstreamer-plugins-base1.0-dev \
+            libgstreamer-plugins-bad1.0-dev \
+            libzstd-dev \
+            libbrotli-dev \
+            libfreetype-dev \
+            libharfbuzz-dev \
+            libfontconfig1-dev \
+            libfribidi-dev \
+            libgcrypt20-dev \
+            libgpg-error-dev \
+            libdouble-conversion-dev \
+            libdlfcn-dev \
+            libnm-dev \
+            libicu-dev \
+            libglib2.0-dev \
+            libpcre2-dev \
+            libssl-dev \
+            libopus-dev \
+            libvpx-dev \
+            libx11-dev \
+            libxext-dev \
+            libxfixes-dev \
+            libxi-dev \
+            libxrender-dev \
+            libxshape-dev \
+            libxtst-dev \
+            libxkbcommon-dev \
+            libxcb1-dev \
+            libxcb-randr0-dev \
+            libxcb-shape0-dev \
+            libxcb-xfixes0-dev \
+            libxcb-sync-dev \
+            libxcb-xinerama0-dev \
+            libxcb-composite0-dev \
+            libxcb-render-util0-dev \
+            libxcb-glx0-dev \
+            libxcb-keysyms1-dev \
+            libxcb-image0-dev \
+            libxcb-shm0-dev \
+            libxcb-icccm4-dev \
+            libxcb-util0-dev \
+            libxcb-randr0-dev \
+            libxcb-glx0-dev \
+            libxcb-cursor-dev \
+            libnss3-dev \
+            libsecret-1-dev \
+            libhyphen-dev \
+            libicu-dev \
+            libjpeg-dev \
+            libpng-dev \
+            libbrotli-dev \
+            libzstd-dev \
+            liblz4-dev \
+            libenchant-2-dev \
+            libcap-dev \
+            libxss-dev \
+            libgtk-3-dev \
+            qt6-base-dev \
+            qt6-tools-dev \
+            qt6-image-formats-plugins \
+            qt6-wayland \
+            qt6-multimedia-dev \
+            qt6-websockets-dev \
+            qt6-svg-dev \
+            qt6-translations-l10n \
+            qt6-base-dev-tools \
+            qt6-tools-dev-tools \
+            qt6-base-private-dev
+
+      - name: Configure project
+        working-directory: Telegram
+        run: |
+          ./configure.sh \
+            -DDESKTOP_APP_USE_PACKAGED=OFF \
+            -DDESKTOP_APP_ENABLE_LTO=ON
+
+      - name: Build project
+        run: |
+          cmake --build out --config ${{ env.CONFIG }} --target Telegram
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AyuGram-${{ matrix.os }}-${{ env.CONFIG }}
+          path: |
+            out/${{ env.CONFIG }}/AyuGram
+            out/${{ env.CONFIG }}/Updater
+            out/${{ env.CONFIG }}/Packer
+          retention-days: 7
