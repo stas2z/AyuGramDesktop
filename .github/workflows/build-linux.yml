@@ -27,7 +27,7 @@ jobs:
 
     env:
       IMAGE: ghcr.io/telegramdesktop/tdesktop/centos_env:latest
-      CCACHE_DIR: ${{ runner.temp }}/ayugram-ccache
+      CCACHE_DIR: "${{ github.workspace }}/.ccache"
 
     steps:
       # ============================================================
