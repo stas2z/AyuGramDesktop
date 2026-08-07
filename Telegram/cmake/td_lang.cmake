@@ -11,24 +11,19 @@ add_library(tdesktop::td_lang ALIAS td_lang)
 include(cmake/generate_lang.cmake)
 
         add_custom_command(
-        OUTPUT
-            ${subsets_timestamp}
-            ${subset_headers}
-        COMMAND
-            codegen_lang
-            --subsets-only
-            -o${gen_dst}
-            -s${src_loc}
-            ${lang_file}
-        COMMAND
-            ${CMAKE_COMMAND} -E touch ${subsets_timestamp}
-        COMMENT "Generating lang subsets (${target_name})"
-        DEPENDS
-            codegen_lang
-            ${gen_keys}
-            ${lang_sources}
-            ${lang_file}
-        )
+    OUTPUT
+        ${gen_timestamp}
+    BYPRODUCTS
+        ${gen_files}
+    COMMAND
+        codegen_lang
+        -o${gen_dst}
+        ${lang_file}
+    COMMENT "Generating lang (${target_name})"
+    DEPENDS
+        codegen_lang
+        ${lang_file}
+    )
 
 target_precompile_headers(td_lang PRIVATE ${src_loc}/lang/lang_pch.h)
 nice_target_sources(td_lang ${src_loc}
