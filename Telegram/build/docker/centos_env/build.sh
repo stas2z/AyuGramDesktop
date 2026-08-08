@@ -9,7 +9,7 @@ rm -f ../out/Telegram/gen/lang_subsets.timestamp
 
 # Re-run cmake to pick up new .cpp files for lang subsets
 cd ../out
-cmake .. "$@"
+cmake .. "$@" force
 
 # Use ccache for faster incremental builds
 export CC="ccache gcc"
