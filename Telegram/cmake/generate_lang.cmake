@@ -68,6 +68,7 @@ function(generate_lang target_name lang_file src_loc)
             codegen_lang
             ${gen_keys}
             ${lang_sources}
+            ${lang_file}
         )
         add_custom_target(${target_name}_lang_subsets DEPENDS ${subsets_timestamp})
         init_target_folder(${target_name}_lang_subsets "(gen)")
