@@ -1,6 +1,7 @@
 #pragma once
 
 #include "data/data_peer_id.h"
+#include <QFileSystemWatcher>
 #include <QSet>
 #include <QString>
 
@@ -14,5 +15,8 @@ public:
 private:
     HiddenUsersManager();
 
+    void watchFile(const QString &filePath);
+
     QSet<long long> _hiddenUserIds;
+    QFileSystemWatcher _watcher;
 };

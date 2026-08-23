@@ -241,8 +241,6 @@ set(ayugram_files
         ayu/features/filters/filters_cache_controller.h
         ayu/features/filters/filters_utils.cpp
         ayu/features/filters/filters_utils.h
-        ayu/features/hidden_users/ayu_hidden_users.cpp
-        ayu/features/hidden_users/ayu_hidden_users.h
         hidden_users_manager.cpp
         hidden_users_manager.h
         ayu/data/messages_storage.cpp

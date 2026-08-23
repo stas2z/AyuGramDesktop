@@ -1,6 +1,5 @@
 #include "hidden_users_manager.h"
 #include "data/data_peer_id.h"
-#include "ayu/features/hidden_users/ayu_hidden_users.h"
 #include <QFile>
 #include <QTextStream>
 #include <QDir>
@@ -38,11 +37,33 @@ HiddenUsersManager::HiddenUsersManager() {
     // Инициализация будет выполнена при создании сессии
 }
 
+void HiddenUsersManager::watchFile(const QString &filePath) {
+    // QFileSystemWatcher drops a path once the underlying file is removed
+    // (e.g. an editor doing save-as-rename), so re-add it every time we
+    // (re)load - addPath() is a no-op if it's already watched.
+    if (!_watcher.files().contains(filePath)) {
+        _watcher.addPath(filePath);
+    }
+    static auto connected = false;
+    if (!connected) {
+        connected = true;
+        QObject::connect(
+            &_watcher,
+            &QFileSystemWatcher::fileChanged,
+            [this](const QString &) {
+                qDebug() << "[HiddenUsers] hidden_users.txt changed, reloading";
+                loadFromFile();
+            });
+    }
+}
+
 void HiddenUsersManager::loadFromFile() {
     const auto filePath = GetFilePath();
-    
+
     qDebug() << "[HiddenUsers] Attempting to load from:" << filePath;
-    
+
+    _hiddenUserIds.clear();
+
     QFile file(filePath);
     if (!file.exists()) {
         qDebug() << "[HiddenUsers] File does not exist. Will use empty list.";
@@ -50,19 +71,21 @@ void HiddenUsersManager::loadFromFile() {
         qDebug() << "[HiddenUsers] Lines starting with # or // are treated as comments";
         return;
     }
-    
+
+    watchFile(filePath);
+
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         qDebug() << "[HiddenUsers] Failed to open file:" << filePath;
         return;
     }
-    
+
     QTextStream in(&file);
     in.setEncoding(QStringConverter::Utf8);
-    
+
     int lineNumber = 0;
     int validCount = 0;
     int invalidCount = 0;
-    
+
     while (!in.atEnd()) {
         lineNumber++;
         QString line = in.readLine().trimmed();

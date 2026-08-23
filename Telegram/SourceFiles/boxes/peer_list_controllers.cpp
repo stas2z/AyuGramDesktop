@@ -55,7 +55,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "styles/style_dialogs.h"
 #include "styles/style_chat_helpers.h"
 #include "styles/style_menu_icons.h"
-#include "ayu/features/hidden_users/ayu_hidden_users.h"
 #include "hidden_users_manager.h"
 #include "styles/style_premium.h"
 
