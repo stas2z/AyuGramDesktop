@@ -4,13 +4,6 @@ set -e
 cd Telegram
 ./configure.sh "$@"
 
-# Force lang subsets regeneration by removing timestamp
-rm -f ../out/Telegram/gen/lang_subsets.timestamp
-
-# Re-run cmake to pick up new .cpp files for lang subsets
-cd ../out
-cmake .. "$@" force
-
 # Use ccache for faster incremental builds
 export CC="ccache gcc"
 export CXX="ccache g++"

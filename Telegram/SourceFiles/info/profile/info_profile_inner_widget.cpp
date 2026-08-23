@@ -57,7 +57,9 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/ui_utility.h"
 #include "styles/style_info.h"
 
+// AyuGram includes
 #include "ayu/ayu_settings.h"
+
 
 namespace Info {
 namespace Profile {
@@ -86,14 +88,12 @@ void AddSavedMusic(
 		object_ptr<Ui::SlideWrap<Ui::VerticalLayout>>(
 			layout,
 			object_ptr<Ui::VerticalLayout>(layout)));
-	Info::Saved::SetupSavedMusic(
-		wrap->entity(),
-		controller,
-		peer,
-		std::move(topBarColor));
-	using namespace rpl::mappers;
 	wrap->toggleOn(
-		wrap->entity()->heightValue() | rpl::map(_1 > 0),
+		Info::Saved::SetupSavedMusic(
+			wrap->entity(),
+			controller,
+			peer,
+			std::move(topBarColor)),
 		anim::type::instant);
 }
 
@@ -588,6 +588,7 @@ base::weak_qptr<Ui::RpWidget> InnerWidget::createPinnedToTop(
 		content->setupStandaloneGroupControl(
 			members->groupByRoleValue(),
 			members->groupByRoleAvailableValue(),
+			members->rowsVisibleValue(),
 			crl::guard(members, [=](bool grouped) {
 				members->setGroupByRole(grouped);
 			}));

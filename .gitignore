@@ -1,4 +1,29 @@
-```
+/out/
+Debug/
+Release/
+/ThirdParty/
+/Telegram/build/target
+/Telegram/build/ai-machine-tag
+/Telegram/tests/
+/Telegram/gyp/tests/*.test
+/Telegram/out/
+/Telegram/*.user
+*.vcxproj*
+*.sln
+*.suo
+*.sdf
+*.opensdf
+*.opendb
+*.VC.db
+*.aps
+*.xcodeproj
+ipch/
+.vs/
+.vscode/
+.idea/
+cmake-build-debug/
+*.qsb
+
 # Build artifacts
 build/
 CMakeCache.txt
@@ -20,14 +45,7 @@ venv/
 *.log
 *.tmp
 
-# Editors
-.vscode/
-.idea/
-cmake-build-debug/
-*.qsb
-
 # Environment
 .env
 .env.local
 *.env.*
-```

@@ -230,9 +230,6 @@ jobs:
 
           mkdir -p "$CCACHE_DIR"
 
-          # Force lang subsets regeneration when lang.strings changed
-          rm -f out/Telegram/gen/lang_subsets.timestamp
-
           docker run --rm \
             -u "$(id -u):$(id -g)" \
             -v "$PWD:/usr/src/tdesktop" \
