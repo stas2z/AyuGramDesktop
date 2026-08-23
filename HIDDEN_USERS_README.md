@@ -33,7 +33,11 @@
 - Текстовые упоминания без юзернейма (`MentionName`, кликабельное имя без `@`) скрытого пользователя лишаются только ссылки/подсветки — сам текст имени не маскируется, так как он не содержит поискового юзернейма
 - Реализовано в `HistoryItem::translatedTextWithLocalEntities()` (`history_item.cpp`): `@username` резолвится в пира через `peerByUsername()`, `MentionName` — напрямую по `userId`, зашитому в entity
 
-### 5. Логирование
+### 5. Уведомления
+- Сообщения от скрытых пользователей не показывают desktop-уведомление (имя + текст) — проверка стоит в `Window::Notifications::System::schedule()` (`notifications_manager.cpp`), рядом с уже существующей проверкой `isMessageHidden()`
+- Проверяется отправитель сообщения (`item->from()`), а не пир треда — работает как для личных чатов, так и для сообщений скрытого пользователя в группах
+
+### 6. Логирование
 Все действия логируются в консоль с префиксом `[HiddenUsers]`:
 - Загрузка файла со списком ID
 - Количество загруженных ID
@@ -63,7 +67,8 @@
 5. `Telegram/SourceFiles/history/view/history_view_list_widget.cpp` - скрытие сообщений в открытом чате (`ListWidget::refreshRows`)
 6. `Telegram/SourceFiles/dialogs/dialogs_inner_widget.cpp` - скрытие сообщений в результатах поиска (`InnerWidget::searchReceived`)
 7. `Telegram/SourceFiles/history/history_item.cpp` - снятие ссылки с упоминаний скрытых пользователей (`translatedTextWithLocalEntities`)
-8. `Telegram/CMakeLists.txt` - добавлены файлы менеджера в сборку
+8. `Telegram/SourceFiles/window/notifications_manager.cpp` - подавление desktop-уведомлений (`System::schedule`)
+9. `Telegram/CMakeLists.txt` - добавлены файлы менеджера в сборку
 
 ### Инициализация
 Загрузка списка скрытых пользователей происходит автоматически при создании сессии в `main_session.cpp` (строка 308):
