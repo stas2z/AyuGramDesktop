@@ -55,6 +55,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_saved_sublist.h"
 #include "data/data_changes.h"
 #include "data/data_session.h"
+#include "hidden_users_manager.h"
 #include "data/data_message_reactions.h"
 #include "data/data_folder.h"
 #include "data/data_forum.h"
@@ -3837,6 +3838,31 @@ TextWithEntities HistoryItem::translatedTextWithLocalEntities() const {
 			result.entities.erase(from, result.entities.end());
 			setHasHiddenLinks(true);
 		}
+	}
+
+	const auto &manager = HiddenUsersManager::Instance();
+	const auto isHiddenMention = [&](const EntityInText &entity) {
+		const auto type = entity.type();
+		if (type == EntityType::MentionName) {
+			const auto fields = TextUtilities::MentionNameDataToFields(
+				entity.data());
+			return manager.isHidden(peerFromUser(UserId(fields.userId)));
+		} else if (type == EntityType::Mention) {
+			const auto username = result.text.mid(
+				entity.offset() + 1,
+				entity.length() - 1);
+			if (const auto peer = _history->owner().peerByUsername(
+					username)) {
+				return manager.isHidden(peer->id);
+			}
+		}
+		return false;
+	};
+	const auto hiddenFrom = ranges::remove_if(
+		result.entities,
+		isHiddenMention);
+	if (hiddenFrom != result.entities.end()) {
+		result.entities.erase(hiddenFrom, result.entities.end());
 	}
 
 	return result;
