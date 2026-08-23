@@ -18,11 +18,14 @@
 - Списки участников групп и каналов (`edit_participants_box.cpp`)
 - Списки чатов (`peer_list_controllers.cpp` - ChatsListBoxController)
 - Списки контактов (`peer_list_controllers.cpp` - ContactsBoxController)
+- Сообщения скрытых пользователей в самом чате (`history_view_list_widget.cpp` - `ListWidget::refreshRows`)
+- Сообщения скрытых пользователей в глобальном и внутричатовом поиске сообщений (`dialogs_inner_widget.cpp` - `InnerWidget::searchReceived`)
 
 ### 3. Поиск через @username
-- При поиске по @username скрытые пользователи **находятся**
+- При поиске по @username (поиск пиров/контактов) скрытые пользователи **находятся**
 - Это позволяет открыть чат со скрытым пользователем при необходимости
-- Фильтрация происходит только в методах `appendRow()` и `prependRow()`, но не в `createSearchRow()`
+- Фильтрация peer-поиска происходит только в методах `appendRow()` и `prependRow()`, но не в `createSearchRow()`
+- Поиск **сообщений** (Ctrl+F, глобальный поиск) при этом фильтрует сообщения от скрытых пользователей — они не отображаются в результатах
 
 ### 4. Логирование
 Все действия логируются в консоль с префиксом `[HiddenUsers]`:

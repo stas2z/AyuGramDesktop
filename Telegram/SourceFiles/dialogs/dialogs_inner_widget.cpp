@@ -61,6 +61,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/stickers/data_custom_emoji.h"
 #include "data/stickers/data_stickers.h"
 #include "data/data_send_action.h"
+#include "hidden_users_manager.h"
 #include "base/unixtime.h"
 #include "base/options.h"
 #include "lang/lang_keys.h"
@@ -4760,6 +4761,8 @@ void InnerWidget::searchReceived(
 		? _searchState.inChat
 		: Key(_openedForum->history());
 	if (inject
+		&& !(inject->from()->isUser()
+			&& HiddenUsersManager::Instance().isHidden(inject->from()->id))
 		&& (globalSearch
 			|| !_searchState.inChat
 			|| inject->history() == _searchState.inChat.history())) {
@@ -4776,6 +4779,10 @@ void InnerWidget::searchReceived(
 	}
 	auto &results = toPreview ? _previewResults : _searchResults;
 	for (const auto &item : messages) {
+		const auto from = item->from();
+		if (from->isUser() && HiddenUsersManager::Instance().isHidden(from->id)) {
+			continue;
+		}
 		const auto history = item->history();
 		if (toPreview || !uniquePeers || !hasHistoryInResults(history)) {
 			const auto index = int(results.size());

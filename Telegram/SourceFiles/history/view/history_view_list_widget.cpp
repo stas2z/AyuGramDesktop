@@ -12,6 +12,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "base/qt/qt_common_adapters.h"
 #include "history/history.h"
 #include "history/history_item.h"
+#include "hidden_users_manager.h"
 #include "history/history_item_components.h"
 #include "history/history_item_helpers.h"
 #include "history/history_item_text.h"
@@ -758,6 +759,11 @@ void ListWidget::refreshRows(const Data::MessagesSlice &old) {
 	auto nearestIndex = -1;
 	const auto pushItem = [&](const FullMsgId &fullId) {
 		if (const auto item = session().data().message(fullId)) {
+			const auto from = item->from();
+			if (from->isUser()
+				&& HiddenUsersManager::Instance().isHidden(from->id)) {
+				return;
+			}
 			if (_slice.nearestToAround == fullId) {
 				nearestIndex = int(_items.size());
 			}
