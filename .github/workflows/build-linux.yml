@@ -221,6 +221,7 @@ jobs:
       # ============================================================
 
       - name: Build AyuGram
+        id: build
         env:
           API_ID: ${{ secrets.TDESKTOP_API_ID }}
           API_HASH: ${{ secrets.TDESKTOP_API_HASH }}
@@ -243,29 +244,15 @@ jobs:
               -D TDESKTOP_API_HASH="$API_HASH"
 
       # ============================================================
-      # CHECK
-      # ============================================================
-
-      - name: Check build
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if [ ! -f out/Release/AyuGram ]; then
-            echo "ERROR: out/Release/AyuGram not found"
-            exit 1
-          fi
-
-          echo
-          echo "Build successful:"
-          file out/Release/AyuGram
-          ls -lh out/Release/AyuGram
-
-      # ============================================================
       # SAVE CURRENT COMMIT INTO OUT CACHE
+      #
+      # Сохраняем кеш сразу после успешной сборки, не дожидаясь
+      # Check build / Package - если они упадут, отстроенный out/
+      # и ccache всё равно не должны пропадать.
       # ============================================================
 
       - name: Mark incremental build revision
+        if: steps.build.outcome == 'success'
         shell: bash
         run: |
           echo "$GITHUB_SHA" > out/.ci-cache-base-sha
@@ -275,7 +262,7 @@ jobs:
       # ============================================================
 
       - name: Save ccache
-        if: success()
+        if: steps.build.outcome == 'success'
         uses: actions/cache/save@v4
         with:
           path: ${{ env.CCACHE_DIR }}
@@ -294,7 +281,7 @@ jobs:
       # ============================================================
 
       - name: Save incremental build
-        if: success()
+        if: steps.build.outcome == 'success'
         uses: actions/cache/save@v4
         with:
           path: out
@@ -317,6 +304,25 @@ jobs:
             }}-${{
               github.run_id
             }}
+
+      # ============================================================
+      # CHECK
+      # ============================================================
+
+      - name: Check build
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ ! -f out/Release/AyuGram ]; then
+            echo "ERROR: out/Release/AyuGram not found"
+            exit 1
+          fi
+
+          echo
+          echo "Build successful:"
+          file out/Release/AyuGram
+          ls -lh out/Release/AyuGram
 
       # ============================================================
       # PACKAGE
