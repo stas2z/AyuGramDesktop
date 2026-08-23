@@ -27,6 +27,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_channel.h"
 #include "data/data_forum_topic.h"
 #include "data/data_user.h"
+#include "hidden_users_manager.h"
 #include "data/data_document.h"
 #include "data/data_poll.h"
 #include "base/unixtime.h"
@@ -453,6 +454,11 @@ void System::schedule(Data::ItemNotification notification) {
 		return;
 	}
 	if (isMessageHidden(item)) {
+		thread->popNotification(notification);
+		return;
+	}
+	if (const auto from = item->from(); from->isUser()
+			&& HiddenUsersManager::Instance().isHidden(from->id)) {
 		thread->popNotification(notification);
 		return;
 	}
