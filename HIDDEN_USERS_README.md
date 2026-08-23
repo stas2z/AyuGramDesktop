@@ -27,7 +27,12 @@
 - Фильтрация peer-поиска происходит только в методах `appendRow()` и `prependRow()`, но не в `createSearchRow()`
 - Поиск **сообщений** (Ctrl+F, глобальный поиск) при этом фильтрует сообщения от скрытых пользователей — они не отображаются в результатах
 
-### 4. Логирование
+### 4. Упоминания (@mention) в тексте сообщений
+- И `@username`-упоминания, и текстовые упоминания без юзернейма (`MentionName`, когда имя кликабельно без `@`) скрытого пользователя лишаются ссылки/подсветки
+- Сам текст `@username` в сообщении остаётся видимым, но перестаёт быть кликабельным — точно так же Telegram уже показывает упоминания реально удалённых аккаунтов
+- Реализовано в `HistoryItem::translatedTextWithLocalEntities()` (`history_item.cpp`): `@username` резолвится в пира через `peerByUsername()`, `MentionName` — напрямую по `userId`, зашитому в entity
+
+### 5. Логирование
 Все действия логируются в консоль с префиксом `[HiddenUsers]`:
 - Загрузка файла со списком ID
 - Количество загруженных ID
@@ -54,7 +59,10 @@
 2. `Telegram/SourceFiles/hidden_users_manager.cpp` - реализация менеджера
 3. `Telegram/SourceFiles/boxes/peers/edit_participants_box.cpp` - скрытие в списках участников
 4. `Telegram/SourceFiles/boxes/peer_list_controllers.cpp` - скрытие в списках чатов и контактов
-5. `Telegram/CMakeLists.txt` - добавлены файлы менеджера в сборку
+5. `Telegram/SourceFiles/history/view/history_view_list_widget.cpp` - скрытие сообщений в открытом чате (`ListWidget::refreshRows`)
+6. `Telegram/SourceFiles/dialogs/dialogs_inner_widget.cpp` - скрытие сообщений в результатах поиска (`InnerWidget::searchReceived`)
+7. `Telegram/SourceFiles/history/history_item.cpp` - снятие ссылки с упоминаний скрытых пользователей (`translatedTextWithLocalEntities`)
+8. `Telegram/CMakeLists.txt` - добавлены файлы менеджера в сборку
 
 ### Инициализация
 Загрузка списка скрытых пользователей происходит автоматически при создании сессии в `main_session.cpp` (строка 308):
@@ -73,3 +81,6 @@ if (HiddenUsersManager::Instance().isHidden(peerId)) {
 - Скрытие работает только для пользователей (PeerIdType::User)
 - Группы, каналы и другие типы пиров не скрываются
 - User ID должны быть в числовом формате (bare ID без префиксов)
+- Список скрытых пользователей читается из файла один раз при создании сессии — изменения в `hidden_users.txt` применяются только после перезапуска/новой сессии, live-reload нет
+- Всё скрытие — только на уровне отображения (UI): сами данные сообщений, счётчики непрочитанного и история загружаются как обычно, ничего не удаляется и не блокируется на уровне сети/данных
+- Есть неиспользуемый параллельный модуль `Ayu::HiddenUsers` (`ayu/features/hidden_users/ayu_hidden_users.h/.cpp`) — задекларирован, но нигде не вызывается; реальная реализация — только через `HiddenUsersManager`
