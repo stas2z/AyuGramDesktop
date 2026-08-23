@@ -251,15 +251,15 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ ! -f out/Release/Telegram ]; then
-            echo "ERROR: out/Release/Telegram not found"
+          if [ ! -f out/Release/AyuGram ]; then
+            echo "ERROR: out/Release/AyuGram not found"
             exit 1
           fi
 
           echo
           echo "Build successful:"
-          file out/Release/Telegram
-          ls -lh out/Release/Telegram
+          file out/Release/AyuGram
+          ls -lh out/Release/AyuGram
 
       # ============================================================
       # SAVE CURRENT COMMIT INTO OUT CACHE
@@ -332,7 +332,7 @@ jobs:
           rm -rf package
           mkdir package
 
-          cp out/Release/Telegram package/AyuGram
+          cp out/Release/AyuGram package/AyuGram
           chmod +x package/AyuGram
 
           tar \
