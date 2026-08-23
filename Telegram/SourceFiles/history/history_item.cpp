@@ -3841,28 +3841,44 @@ TextWithEntities HistoryItem::translatedTextWithLocalEntities() const {
 	}
 
 	const auto &manager = HiddenUsersManager::Instance();
-	const auto isHiddenMention = [&](const EntityInText &entity) {
+	auto hiddenEntity = std::vector<bool>(result.entities.size(), false);
+	auto anyHidden = false;
+	for (auto i = 0; i != result.entities.size(); ++i) {
+		const auto &entity = result.entities[i];
 		const auto type = entity.type();
 		if (type == EntityType::MentionName) {
 			const auto fields = TextUtilities::MentionNameDataToFields(
 				entity.data());
-			return manager.isHidden(peerFromUser(UserId(fields.userId)));
+			if (manager.isHidden(peerFromUser(UserId(fields.userId)))) {
+				hiddenEntity[i] = anyHidden = true;
+			}
 		} else if (type == EntityType::Mention) {
 			const auto username = result.text.mid(
 				entity.offset() + 1,
 				entity.length() - 1);
-			if (const auto peer = _history->owner().peerByUsername(
-					username)) {
-				return manager.isHidden(peer->id);
+			const auto peer = _history->owner().peerByUsername(username);
+			if (peer && manager.isHidden(peer->id)) {
+				// Mask the @username text itself, not just the link -
+				// otherwise the username stays readable and can still
+				// be used to find the hidden user via search. Same
+				// length is kept so other entities' offsets don't move.
+				result.text.replace(
+					entity.offset() + 1,
+					entity.length() - 1,
+					QString(entity.length() - 1, QChar(0x2022)));
+				hiddenEntity[i] = anyHidden = true;
 			}
 		}
-		return false;
-	};
-	const auto hiddenFrom = ranges::remove_if(
-		result.entities,
-		isHiddenMention);
-	if (hiddenFrom != result.entities.end()) {
-		result.entities.erase(hiddenFrom, result.entities.end());
+	}
+	if (anyHidden) {
+		auto filtered = EntitiesInText();
+		filtered.reserve(result.entities.size());
+		for (auto i = 0; i != result.entities.size(); ++i) {
+			if (!hiddenEntity[i]) {
+				filtered.push_back(result.entities[i]);
+			}
+		}
+		result.entities = std::move(filtered);
 	}
 
 	return result;
