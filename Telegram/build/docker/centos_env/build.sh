@@ -14,12 +14,13 @@ export CCACHE_COMPRESS=1
 export CCACHE_COMPRESSLEVEL=6
 export CCACHE_MAXSIZE=10G
 
-# CCACHE_DIR is a persistent mounted cache reused across every CI run
-# (restored/saved every time), so if "disable = true" ever ended up in
-# its ccache.conf - from any earlier experiment, however long ago -
-# it silently disables every single compile forever after, with no
-# further trace beyond "Result: disabled" in the log. Force it back
-# off explicitly on every build so history can't poison this again.
+# The centos_env docker image itself ships `ENV CCACHE_DISABLE=true`
+# (confirmed via `docker inspect`) - environment variables always take
+# priority over ccache.conf/--set-config, so no config-file-level fix
+# could ever override it; every compile was silently a no-op ("Result:
+# disabled") no matter what we did to the config. Unset it so ccache
+# actually runs.
+unset CCACHE_DISABLE
 ccache --set-config=disable=false
 echo "=== ccache config ==="
 ccache -p | grep -E "disable|cache_dir" || true
