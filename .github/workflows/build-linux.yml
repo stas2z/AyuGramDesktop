@@ -337,8 +337,6 @@ jobs:
 
       # ============================================================
       # PACKAGE
-      #
-      # tar.gz сохраняет executable bit.
       # ============================================================
 
       - name: Package
@@ -360,22 +358,20 @@ jobs:
           echo "After strip:"
           ls -lh package/AyuGram
 
-          tar \
-            -C package \
-            -czf AyuGram-Linux-x86_64.tar.gz \
-            AyuGram
-
-          ls -lh AyuGram-Linux-x86_64.tar.gz
-
       # ============================================================
       # ARTIFACT
+      #
+      # actions/upload-artifact always wraps the artifact in a zip for
+      # download regardless of what's uploaded, and v4 preserves POSIX
+      # permissions (including the executable bit) correctly - so
+      # tar.gz'ing the binary ourselves first was just double
+      # compression for nothing. Upload the stripped binary directly.
       # ============================================================
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: AyuGram-Linux-x86_64
-          path: AyuGram-Linux-x86_64.tar.gz
-          compression-level: 0
+          path: package/AyuGram
           retention-days: 14
           if-no-files-found: error
