@@ -238,6 +238,18 @@ jobs:
 
           mkdir -p "$CCACHE_DIR"
 
+          # CMAKE_C_COMPILER/CMAKE_CXX_COMPILER are explicitly pinned to
+          # plain gcc/g++ here on purpose. The restored out/ cache's
+          # CMakeCache.txt has these baked in from long before this
+          # workflow existed, as the literal *path to ccache itself*
+          # (with "gcc"/"g++" stuck in CMAKE_C_COMPILER_ARG1 as a
+          # leftover from an old `CC="ccache gcc"` env-var setup) -
+          # combined with CMAKE_C_COMPILER_LAUNCHER=ccache below, that
+          # produced a broken double-wrapped command ("ccache
+          # /usr/bin/ccache gcc ...") that silently never actually used
+          # the cache (confirmed via 0 hits/misses/files across several
+          # full builds). Re-pinning the compiler here overwrites that
+          # poisoned cache entry with a clean value every build.
           docker run --rm \
             -u "$(id -u):$(id -g)" \
             -v "$PWD:/usr/src/tdesktop" \
@@ -249,6 +261,8 @@ jobs:
             "$IMAGE" \
             /usr/src/tdesktop/Telegram/build/docker/centos_env/build.sh \
               -D CMAKE_CONFIGURATION_TYPES=Release \
+              -D CMAKE_C_COMPILER=gcc \
+              -D CMAKE_CXX_COMPILER=g++ \
               -D CMAKE_C_COMPILER_LAUNCHER=ccache \
               -D CMAKE_CXX_COMPILER_LAUNCHER=ccache \
               -D TDESKTOP_API_ID="$API_ID" \
