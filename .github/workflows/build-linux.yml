@@ -244,6 +244,8 @@ jobs:
             -v "$CCACHE_DIR:/var/cache/ccache" \
             -e CONFIG=Release \
             -e CCACHE_SLOPPINESS=pch_defines,time_macros \
+            -e HOME=/var/cache/ccache \
+            -e CCACHE_CONFIGPATH=/var/cache/ccache/ccache.conf \
             "$IMAGE" \
             /usr/src/tdesktop/Telegram/build/docker/centos_env/build.sh \
               -D CMAKE_CONFIGURATION_TYPES=Release \
