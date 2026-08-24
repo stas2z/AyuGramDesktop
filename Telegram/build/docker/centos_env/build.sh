@@ -4,9 +4,12 @@ set -e
 cd Telegram
 ./configure.sh "$@"
 
-# Use ccache for faster incremental builds
-export CC="ccache gcc"
-export CXX="ccache g++"
+# ccache is wired in via CMAKE_C_COMPILER_LAUNCHER/CMAKE_CXX_COMPILER_LAUNCHER
+# (passed as configure flags, see build-linux.yml) rather than CC/CXX env
+# vars - CMAKE_C_COMPILER/CMAKE_CXX_COMPILER are cached CMake variables only
+# resolved on the *first* configure of a build tree, so once out/ is
+# restored from a previous run's cache, CC/CXX overrides here would be
+# silently ignored and every compile would bypass ccache entirely.
 export CCACHE_COMPRESS=1
 export CCACHE_COMPRESSLEVEL=6
 export CCACHE_MAXSIZE=10G
