@@ -14,6 +14,16 @@ export CCACHE_COMPRESS=1
 export CCACHE_COMPRESSLEVEL=6
 export CCACHE_MAXSIZE=10G
 
+# CCACHE_DIR is a persistent mounted cache reused across every CI run
+# (restored/saved every time), so if "disable = true" ever ended up in
+# its ccache.conf - from any earlier experiment, however long ago -
+# it silently disables every single compile forever after, with no
+# further trace beyond "Result: disabled" in the log. Force it back
+# off explicitly on every build so history can't poison this again.
+ccache --set-config=disable=false
+echo "=== ccache config ==="
+ccache -p | grep -E "^disable|^cache_dir"
+
 echo "=== ccache stats before build ==="
 ccache -s
 
@@ -35,6 +45,7 @@ import sys
 path = sys.argv[1]
 pid_file = {}
 pid_result = {}
+pid_reason = {}
 order = []
 
 line_re = re.compile(r"^\[[^\]]*\s(\d+)\]\s(.*)$")
@@ -56,6 +67,8 @@ with open(path, "r", errors="replace") as f:
             pid_result[pid] = rest[len("Result:"):].strip()
             if pid not in pid_file:
                 order.append(pid)
+        elif "isabl" in rest and pid not in pid_reason:
+            pid_reason[pid] = rest
 
 hits = misses = other = 0
 for pid in order:
@@ -70,7 +83,8 @@ for pid in order:
         other += 1
     # Only print non-hits - hits are the expected case and would
     # otherwise flood the log; misses/disabled are what's worth seeing.
-    print(f"{result:24s} {src}")
+    reason = pid_reason.get(pid, "")
+    print(f"{result:24s} {src}" + (f"  ({reason})" if reason else ""))
 
 print(f"--- {hits} hits, {misses} misses, {other} other/disabled ({len(order)} total) ---")
 PYEOF

@@ -266,8 +266,7 @@ jobs:
               -D CMAKE_C_COMPILER_LAUNCHER=ccache \
               -D CMAKE_CXX_COMPILER_LAUNCHER=ccache \
               -D TDESKTOP_API_ID="$API_ID" \
-              -D TDESKTOP_API_HASH="$API_HASH" \
-              force
+              -D TDESKTOP_API_HASH="$API_HASH"
 
       # ============================================================
       # SAVE CURRENT COMMIT INTO OUT CACHE
