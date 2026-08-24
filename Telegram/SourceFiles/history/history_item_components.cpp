@@ -66,6 +66,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 // AyuGram includes
 #include "ayu/features/filters/filters_controller.h"
+#include "ayu/utils/telegram_helpers.h"
 
 
 namespace {
@@ -581,7 +582,7 @@ void HistoryMessageReply::updateData(
 
 	const auto filtered = resolvedMessage &&
 			!resolvedMessage.empty() &&
-			FiltersController::filtered(resolvedMessage.get());
+			isMessageHidden(resolvedMessage.get());
 
 	const auto displaying = resolvedMessage
 		|| resolvedStory

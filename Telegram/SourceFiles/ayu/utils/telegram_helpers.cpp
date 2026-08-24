@@ -18,6 +18,7 @@
 #include "ayu/ui/boxes/donate_info_box.h"
 #include "ayu/ui/toasts.h"
 #include "ayu/utils/rc_manager.h"
+#include "hidden_users_manager.h"
 #include "core/core_settings.h"
 #include "core/application.h"
 #include "base/unixtime.h"
@@ -298,7 +299,20 @@ bool isMessageHidden(const not_null<HistoryItem*> item) {
 		return true;
 	}
 
-	return FiltersController::filtered(item);
+	if (FiltersController::filtered(item)) {
+		return true;
+	}
+
+	// Hide a hidden user's messages compactly wherever they post among
+	// other people (groups), but not inside a direct chat with them.
+	const auto from = item->from();
+	if (from->isUser()
+			&& from != item->history()->peer
+			&& HiddenUsersManager::Instance().isHidden(from->id)) {
+		return true;
+	}
+
+	return false;
 }
 
 void MarkAsReadChatList(not_null<Dialogs::MainList*> list) {

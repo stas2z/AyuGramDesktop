@@ -20,7 +20,8 @@ Hidden users are excluded from the following lists:
 - Group/channel participant lists (`edit_participants_box.cpp`)
 - Chat lists (`peer_list_controllers.cpp` - ChatsListBoxController)
 - Contact lists (`peer_list_controllers.cpp` - ContactsBoxController)
-- Their messages **in group chats** (`history_view_list_widget.cpp` - `ListWidget::refreshRows`)
+- Their messages **in group chats**, in the open chat itself - compactly, no gap left in the scroll - via the existing `isMessageHidden()`/`Element::isHidden()` mechanism (`ayu/utils/telegram_helpers.cpp`) already used app-wide for filtered/ghost messages, already correctly wired through paint/height/scroll code in both the legacy `HistoryInner` (the main chat view) and `HistoryView::ListWidget` (pop-out chat window, pinned, scheduled)
+- A reply-quote pointing at a hidden user's message in a group shows as unavailable ("message deleted") instead of the real text - the same `isMessageHidden()` check is wired into `HistoryMessageReply::updateData()` (`history_item_components.cpp`)
 - Their messages in global and in-chat message search results, unless the matched message is from a direct chat with that exact user (`dialogs_inner_widget.cpp` - `InnerWidget::searchReceived`)
 
 **Important exception:** if a direct 1-on-1 chat with the hidden user themselves is open, their messages there **show up normally** - once you've deliberately opened a conversation with them, hiding the content there would be pointless. Message hiding only applies where the hidden user posts among other people (group chats). The same exception applies to message search (`item->from()` is compared against `history()->peer`), but **not** to desktop notifications - those are always suppressed, no exception.

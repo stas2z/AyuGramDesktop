@@ -12,7 +12,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "base/qt/qt_common_adapters.h"
 #include "history/history.h"
 #include "history/history_item.h"
-#include "hidden_users_manager.h"
 #include "history/history_item_components.h"
 #include "history/history_item_helpers.h"
 #include "history/history_item_text.h"
@@ -757,20 +756,13 @@ void ListWidget::refreshRows(const Data::MessagesSlice &old) {
 	_items.reserve(_slice.ids.size());
 	std::swap(_views, _viewsCapacity);
 	auto nearestIndex = -1;
-	// Don't hide messages inside a direct 1-on-1 chat with the hidden
-	// user themselves - only hide their messages in group chats where
-	// they post among other people.
-	const auto shownPeer = _delegate->listTranslateHistory()
-		? _delegate->listTranslateHistory()->peer.get()
-		: nullptr;
+	// Hidden users' messages are hidden compactly via isMessageHidden()
+	// (see ayu/utils/telegram_helpers.cpp), the same mechanism used for
+	// filtered/ghost messages elsewhere - it's already correctly wired
+	// through height/scroll/hit-test everywhere an Element exists, so
+	// there's no need to skip creating the Element here at all.
 	const auto pushItem = [&](const FullMsgId &fullId) {
 		if (const auto item = session().data().message(fullId)) {
-			const auto from = item->from();
-			if (from->isUser()
-				&& from != shownPeer
-				&& HiddenUsersManager::Instance().isHidden(from->id)) {
-				return;
-			}
 			if (_slice.nearestToAround == fullId) {
 				nearestIndex = int(_items.size());
 			}
