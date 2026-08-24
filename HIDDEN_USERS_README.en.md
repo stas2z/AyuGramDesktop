@@ -32,10 +32,10 @@ Hidden users are excluded from the following lists:
 - **Message** search (Ctrl+F, global search) does filter out messages from hidden users - they don't show up in results
 
 ### 4. Mentions (@mention) in message text
-- A hidden user's `@username` mention is masked right in the text: the username characters are replaced with `•` (length preserved, so other entities' offsets don't shift), plus the link/highlight is stripped
+- A hidden user's `@username` mention is fully replaced with `@DELETED` right in the text (a different-length replacement, so every other entity's offset in the message is properly re-shifted via `shiftLeft`/`shiftRight`), plus the link/highlight is stripped
   - Masking is necessary - otherwise the username stays readable as plain text and can be typed into search to find the hidden user
 - Text mentions without a username (`MentionName`, a clickable name shown without `@`) of a hidden user only lose their link/highlight - the name text itself isn't masked, since it doesn't contain a searchable username
-- Implemented in `HistoryItem::translatedTextWithLocalEntities()` (`history_item.cpp`): `@username` is resolved to a peer via `peerByUsername()`, `MentionName` directly via the `userId` encoded in the entity
+- Implemented in `HistoryItem::maskHiddenMentions()` (`history_item.cpp`), shared by both `translatedTextWithLocalEntities()` (message text) and `toPreview()` (reply-quote previews, chat list, notifications) - `@username` is resolved to a peer via `peerByUsername()`, `MentionName` directly via the `userId` encoded in the entity
 
 ### 5. Notifications
 - Messages from hidden users **never** trigger a desktop notification (name + text) - no exception for a direct chat with them (unlike message hiding in chat/search) - the check lives in `Window::Notifications::System::schedule()` (`notifications_manager.cpp`), next to the existing `isMessageHidden()` check

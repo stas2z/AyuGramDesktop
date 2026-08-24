@@ -3840,9 +3840,20 @@ TextWithEntities HistoryItem::translatedTextWithLocalEntities() const {
 		}
 	}
 
+	return maskHiddenMentions(std::move(result));
+}
+
+TextWithEntities HistoryItem::maskHiddenMentions(
+		TextWithEntities text) const {
+	auto result = std::move(text);
 	const auto &manager = HiddenUsersManager::Instance();
 	auto hiddenEntity = std::vector<bool>(result.entities.size(), false);
 	auto anyHidden = false;
+	struct MentionMask {
+		int offset = 0;
+		int length = 0;
+	};
+	auto masks = std::vector<MentionMask>();
 	for (auto i = 0; i != result.entities.size(); ++i) {
 		const auto &entity = result.entities[i];
 		const auto type = entity.type();
@@ -3858,15 +3869,38 @@ TextWithEntities HistoryItem::translatedTextWithLocalEntities() const {
 				entity.length() - 1);
 			const auto peer = _history->owner().peerByUsername(username);
 			if (peer && manager.isHidden(peer->id)) {
-				// Mask the @username text itself, not just the link -
-				// otherwise the username stays readable and can still
-				// be used to find the hidden user via search. Same
-				// length is kept so other entities' offsets don't move.
-				result.text.replace(
-					entity.offset() + 1,
-					entity.length() - 1,
-					QString(entity.length() - 1, QChar(0x2022)));
 				hiddenEntity[i] = anyHidden = true;
+				masks.push_back({ entity.offset(), entity.length() });
+			}
+		}
+	}
+	if (!masks.empty()) {
+		// Mask the @username text itself, not just the link - otherwise
+		// the username stays readable and can still be used to find the
+		// hidden user via search. Masks are already in ascending offset
+		// order (entities come pre-sorted); apply text edits back to
+		// front so earlier offsets stay valid while editing, then shift
+		// every surviving entity's offset to match the edited text.
+		static const auto kPlaceholder = u"@DELETED"_q;
+		for (auto it = masks.rbegin(); it != masks.rend(); ++it) {
+			result.text.replace(it->offset, it->length, kPlaceholder);
+		}
+		for (auto i = 0; i != result.entities.size(); ++i) {
+			if (hiddenEntity[i]) {
+				continue;
+			}
+			auto &entity = result.entities[i];
+			auto delta = 0;
+			for (const auto &mask : masks) {
+				if (mask.offset >= entity.offset()) {
+					break;
+				}
+				delta += kPlaceholder.size() - mask.length;
+			}
+			if (delta > 0) {
+				entity.shiftRight(delta);
+			} else if (delta < 0) {
+				entity.shiftLeft(-delta);
 			}
 		}
 	}
@@ -4773,7 +4807,8 @@ ItemPreview HistoryItem::toPreview(ToPreviewOptions options) const {
 				// wrap_rtl "adds" a newline in case text starts with quote.
 				// So we remove those by DialogsPreviewText call.
 				.text = st::wrap_rtl(Dialogs::Ui::DialogsPreviewText(
-					options.translated ? translatedText() : _text))
+					maskHiddenMentions(
+						options.translated ? translatedText() : _text)))
 			};
 		}
 		return {};
