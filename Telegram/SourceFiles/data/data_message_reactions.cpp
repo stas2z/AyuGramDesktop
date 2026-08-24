@@ -23,6 +23,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_channel.h"
 #include "data/data_user.h"
 #include "data/data_session.h"
+#include "hidden_users_manager.h"
 #include "data/data_histories.h"
 #include "data/data_changes.h"
 #include "data/data_document.h"
@@ -2278,6 +2279,11 @@ bool MessageReactions::change(
 				return;
 			}
 			const auto peer = owner.peer(peerFromMTP(data.vpeer_id()));
+			if (peer->isUser()
+				&& peer != _item->history()->peer
+				&& HiddenUsersManager::Instance().isHidden(peer->id)) {
+				return;
+			}
 			const auto my = IsMyRecent(data, id, peer, _recent, min);
 			list.push_back({
 				.peer = peer,

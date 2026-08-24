@@ -33,6 +33,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 // AyuGram includes
 #include "ayu/ayu_settings.h"
 #include "ayu/features/filters/filters_controller.h"
+#include "hidden_users_manager.h"
 
 
 namespace Api {
@@ -402,9 +403,16 @@ struct State {
 					parsed.list.reserve(data.vreactions().v.size());
 					for (const auto &vote : data.vreactions().v) {
 						const auto &data = vote.data();
+						const auto peerId = peerFromMTP(data.vpeer_id());
+						if (peerIsUser(peerId)
+							&& peerId != item->history()->peer->id
+							&& HiddenUsersManager::Instance().isHidden(
+								peerId)) {
+							continue;
+						}
 						parsed.list.push_back(PeerWithReaction{
 							.peerWithDate = {
-								.peer = peerFromMTP(data.vpeer_id()),
+								.peer = peerId,
 								.date = data.vdate().v,
 								.dateReacted = true,
 							},

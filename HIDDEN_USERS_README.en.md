@@ -41,7 +41,12 @@ Hidden users are excluded from the following lists:
 ### 5. Notifications
 - Messages from hidden users **never** trigger a desktop notification (name + text) - no exception for a direct chat with them (unlike message hiding in chat/search) - the check lives in `Window::Notifications::System::schedule()` (`notifications_manager.cpp`), next to the existing `isMessageHidden()` check
 
-### 6. Logging
+### 6. Reactions
+- A hidden user's reaction doesn't show up in the "who reacted" popup, and their avatar doesn't appear in the small recent-reactors preview on the message itself - same exception for a direct chat with them
+- The reaction count on the pill stays accurate (not recomputed) - only the visual avatar list/popup is filtered
+- Filtered in two places: `Api::WhoReactedIds()` (`api_who_reacted.cpp`) - the full "who reacted" popup; `MessageReactions::change()` (`data_message_reactions.cpp`) - the small recent-reactors preview on the message bubble
+
+### 7. Logging
 All actions are logged to the console with the `[HiddenUsers]` prefix:
 - Loading the ID list file
 - Number of IDs loaded
