@@ -38,6 +38,9 @@ HiddenUsersManager::HiddenUsersManager() {
 }
 
 void HiddenUsersManager::watchFile(const QString &filePath) {
+    _watchedPath = filePath;
+    _lastModified = QFileInfo(filePath).lastModified();
+
     // QFileSystemWatcher drops a path once the underlying file is removed
     // (e.g. an editor doing save-as-rename), so re-add it every time we
     // (re)load - addPath() is a no-op if it's already watched.
@@ -51,9 +54,33 @@ void HiddenUsersManager::watchFile(const QString &filePath) {
             &_watcher,
             &QFileSystemWatcher::fileChanged,
             [this](const QString &) {
-                qDebug() << "[HiddenUsers] hidden_users.txt changed, reloading";
+                qDebug() << "[HiddenUsers] hidden_users.txt changed (watcher), reloading";
                 loadFromFile();
             });
+        QObject::connect(
+            &_pollTimer,
+            &QTimer::timeout,
+            [this] { checkForChanges(); });
+        // Backup poll in case QFileSystemWatcher (inotify) misses the
+        // change - e.g. sandboxed/Flatpak/AppImage runs, network
+        // filesystems, or editors that replace the file via rename in
+        // a way the watcher doesn't reliably pick back up.
+        _pollTimer.start(3000);
+    }
+}
+
+void HiddenUsersManager::checkForChanges() {
+    if (_watchedPath.isEmpty()) {
+        return;
+    }
+    const auto info = QFileInfo(_watchedPath);
+    if (!info.exists()) {
+        return;
+    }
+    const auto modified = info.lastModified();
+    if (modified.isValid() && modified != _lastModified) {
+        qDebug() << "[HiddenUsers] hidden_users.txt changed (poll), reloading";
+        loadFromFile();
     }
 }
 

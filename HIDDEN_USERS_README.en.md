@@ -90,5 +90,5 @@ if (HiddenUsersManager::Instance().isHidden(peerId)) {
 - Hiding only works for users (PeerIdType::User)
 - Groups, channels, and other peer types are never hidden
 - User IDs must be in numeric format (bare ID, no prefixes)
-- `hidden_users.txt` is watched via `QFileSystemWatcher` - changes are picked up live (`HiddenUsersManager::watchFile`), and the ID list is reloaded from scratch (including IDs removed from the file); already-open lists/chats will refresh on their next natural rebuild, there's no forced instant redraw
+- `hidden_users.txt` is watched via `QFileSystemWatcher` plus a 3-second mtime poll as a backup (`QFileSystemWatcher`/inotify isn't always reliable: sandboxed environments like Flatpak/AppImage, network filesystems, editors that rewrite the file via rename) - changes are picked up live (`HiddenUsersManager::watchFile`/`checkForChanges`), and the ID list is reloaded from scratch (including IDs removed from the file); already-open lists/chats will refresh on their next natural rebuild, there's no forced instant redraw
 - All hiding happens purely at the display (UI) layer: message data, unread counts, and history still load normally - nothing is deleted or blocked at the network/data level

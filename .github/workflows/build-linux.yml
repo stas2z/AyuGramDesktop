@@ -143,8 +143,15 @@ jobs:
               github.run_id
             }}
 
+          # Fallback restore-keys deliberately DROPS the hashFiles(...)
+          # component that's in the exact key above. If it were kept,
+          # restore-keys would be byte-for-byte identical to the exact
+          # key and could never actually serve as a fallback - any
+          # hashFiles() mismatch (even a spurious one) would mean no
+          # cache is found at all instead of falling back to the most
+          # recent one for the same image+submodules combo.
           restore-keys: |
-            ayugram-out-${{ runner.os }}-${{ steps.image.outputs.key }}-${{ steps.submodules.outputs.key }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake', 'Telegram/configure.py', 'Telegram/configure.sh', 'Telegram/Resources/langs/lang.strings') }}-
+            ayugram-out-${{ runner.os }}-${{ steps.image.outputs.key }}-${{ steps.submodules.outputs.key }}-
 
       # ============================================================
       # FIX MTIMES FOR NINJA
