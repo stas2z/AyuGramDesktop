@@ -22,7 +22,7 @@ export CCACHE_MAXSIZE=10G
 # off explicitly on every build so history can't poison this again.
 ccache --set-config=disable=false
 echo "=== ccache config ==="
-ccache -p | grep -E "^disable|^cache_dir"
+ccache -p | grep -E "disable|cache_dir" || true
 
 echo "=== ccache stats before build ==="
 ccache -s
