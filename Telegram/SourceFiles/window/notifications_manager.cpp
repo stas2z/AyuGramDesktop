@@ -458,6 +458,7 @@ void System::schedule(Data::ItemNotification notification) {
 		return;
 	}
 	if (const auto from = item->from(); from->isUser()
+			&& from != item->history()->peer
 			&& HiddenUsersManager::Instance().isHidden(from->id)) {
 		thread->popNotification(notification);
 		return;

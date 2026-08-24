@@ -4762,6 +4762,7 @@ void InnerWidget::searchReceived(
 		: Key(_openedForum->history());
 	if (inject
 		&& !(inject->from()->isUser()
+			&& inject->from() != inject->history()->peer
 			&& HiddenUsersManager::Instance().isHidden(inject->from()->id))
 		&& (globalSearch
 			|| !_searchState.inChat
@@ -4780,10 +4781,12 @@ void InnerWidget::searchReceived(
 	auto &results = toPreview ? _previewResults : _searchResults;
 	for (const auto &item : messages) {
 		const auto from = item->from();
-		if (from->isUser() && HiddenUsersManager::Instance().isHidden(from->id)) {
+		const auto history = item->history();
+		if (from->isUser()
+			&& from != history->peer
+			&& HiddenUsersManager::Instance().isHidden(from->id)) {
 			continue;
 		}
-		const auto history = item->history();
 		if (toPreview || !uniquePeers || !hasHistoryInResults(history)) {
 			const auto index = int(results.size());
 			const auto repaint = toPreview

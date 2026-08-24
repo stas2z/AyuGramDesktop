@@ -20,8 +20,10 @@ Hidden users are excluded from the following lists:
 - Group/channel participant lists (`edit_participants_box.cpp`)
 - Chat lists (`peer_list_controllers.cpp` - ChatsListBoxController)
 - Contact lists (`peer_list_controllers.cpp` - ContactsBoxController)
-- Their messages in the open chat itself (`history_view_list_widget.cpp` - `ListWidget::refreshRows`)
-- Their messages in global and in-chat message search results (`dialogs_inner_widget.cpp` - `InnerWidget::searchReceived`)
+- Their messages **in group chats** (`history_view_list_widget.cpp` - `ListWidget::refreshRows`)
+- Their messages in global and in-chat message search results, unless the matched message is from a direct chat with that exact user (`dialogs_inner_widget.cpp` - `InnerWidget::searchReceived`)
+
+**Important exception:** if a direct 1-on-1 chat with the hidden user themselves is open, their messages there **show up normally** - once you've deliberately opened a conversation with them, hiding the content there would be pointless. Message hiding only applies where the hidden user posts among other people (group chats). The same exception applies to message search and desktop notifications - `item->from()` (the sender) is compared against `history()->peer` (the open thread's peer).
 
 ### 3. Searching by @username
 - Searching by @username (peer/contact search) **still finds** hidden users
@@ -36,8 +38,7 @@ Hidden users are excluded from the following lists:
 - Implemented in `HistoryItem::translatedTextWithLocalEntities()` (`history_item.cpp`): `@username` is resolved to a peer via `peerByUsername()`, `MentionName` directly via the `userId` encoded in the entity
 
 ### 5. Notifications
-- Messages from hidden users don't trigger a desktop notification (name + text) - the check lives in `Window::Notifications::System::schedule()` (`notifications_manager.cpp`), next to the existing `isMessageHidden()` check
-- Checks the message sender (`item->from()`), not the thread's peer - works both for direct chats and for a hidden user's messages inside a group
+- Messages from hidden users don't trigger a desktop notification (name + text), **except** messages from a direct chat with that exact user - the check lives in `Window::Notifications::System::schedule()` (`notifications_manager.cpp`), next to the existing `isMessageHidden()` check
 
 ### 6. Logging
 All actions are logged to the console with the `[HiddenUsers]` prefix:
