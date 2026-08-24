@@ -1,5 +1,7 @@
 # Функция скрытия пользователей (Hidden Users)
 
+*[English version](HIDDEN_USERS_README.en.md)*
+
 ## Описание
 Реализована функция скрытия пользователей из списков визуализации в Telegram Desktop на основе списка user ID.
 

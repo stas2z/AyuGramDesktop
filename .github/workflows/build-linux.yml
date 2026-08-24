@@ -341,6 +341,14 @@ jobs:
           cp out/Release/AyuGram package/AyuGram
           chmod +x package/AyuGram
 
+          echo "Before strip:"
+          ls -lh package/AyuGram
+
+          strip --strip-all package/AyuGram
+
+          echo "After strip:"
+          ls -lh package/AyuGram
+
           tar \
             -C package \
             -czf AyuGram-Linux-x86_64.tar.gz \
