@@ -762,7 +762,19 @@ void ChatParticipants::kick(
 		chat->inputChat(),
 		participant->asUser()->inputUser()
 	)).done([=](const MTPUpdates &result) {
+		const auto countBefore = chat->count;
 		chat->session().api().applyUpdates(result);
+
+		// The server's updateChatParticipantDelete is version-gated and
+		// may not always land (out-of-order/duplicate/skipped version),
+		// leaving the member count stale until a full refetch. If the
+		// update didn't already decrement it, do so locally.
+		if (chat->count == countBefore && chat->count > 0) {
+			chat->count--;
+			chat->session().changes().peerUpdated(
+				chat,
+				Data::PeerUpdate::Flag::Members);
+		}
 	}).send();
 }
 
