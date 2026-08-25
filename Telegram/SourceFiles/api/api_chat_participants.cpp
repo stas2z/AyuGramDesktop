@@ -765,12 +765,23 @@ void ChatParticipants::kick(
 		const auto countBefore = chat->count;
 		chat->session().api().applyUpdates(result);
 
+		// MembersCountValue() clamps to max(chat->count,
+		// participants.size()), so a stale entry in the already-loaded
+		// participants set keeps the displayed count from dropping even
+		// once chat->count itself is correct.
+		const auto user = participant->asUser();
+		const auto erased = chat->participants.remove(user);
+
 		// The server's updateChatParticipantDelete is version-gated and
 		// may not always land (out-of-order/duplicate/skipped version),
 		// leaving the member count stale until a full refetch. If the
 		// update didn't already decrement it, do so locally.
-		if (chat->count == countBefore && chat->count > 0) {
+		const auto decremented = (chat->count == countBefore
+			&& chat->count > 0);
+		if (decremented) {
 			chat->count--;
+		}
+		if (decremented || erased) {
 			chat->session().changes().peerUpdated(
 				chat,
 				Data::PeerUpdate::Flag::Members);
