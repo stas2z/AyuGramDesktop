@@ -255,7 +255,8 @@ jobs:
             -v "$PWD:/usr/src/tdesktop" \
             -v "$CCACHE_DIR:/var/cache/ccache" \
             -e CONFIG=Release \
-            -e CCACHE_SLOPPINESS=pch_defines,time_macros \
+            -e CCACHE_SLOPPINESS=pch_defines,time_macros,include_file_mtime,include_file_ctime \
+            -e CCACHE_BASEDIR=/usr/src/tdesktop \
             -e HOME=/var/cache/ccache \
             -e CCACHE_CONFIGPATH=/var/cache/ccache/ccache.conf \
             "$IMAGE" \

@@ -36,6 +36,22 @@ ccache -s
 export CCACHE_LOGFILE=/tmp/ccache.log
 : > "$CCACHE_LOGFILE"
 
+# Diagnostic: with a restored out/ tree, find out *why* ninja considers
+# each node dirty (stale mtime vs. changed command line vs. missing dep)
+# before running the real build - this is a dry run (-n), no side effects.
+if [ -f ../out/build.ninja ]; then
+	echo "=== ninja dirty-reason sample (dry run) ==="
+	ninja -C ../out -d explain -n 2>&1 | grep '^ninja explain:' > /tmp/ninja_explain.log || true
+	TOTAL_EXPLAIN=$(wc -l < /tmp/ninja_explain.log)
+	echo "Total dirty nodes with an explain reason: $TOTAL_EXPLAIN"
+	echo "--- reason breakdown (top patterns) ---"
+	sed -E 's/^ninja explain: //' /tmp/ninja_explain.log \
+		| sed -E 's/[A-Za-z0-9_./-]+\.(cpp|cc|c|h|hpp|o)\b/<file>/g' \
+		| sort | uniq -c | sort -rn | head -15
+	echo "--- first 10 raw lines ---"
+	head -10 /tmp/ninja_explain.log
+fi
+
 cmake --build ../out --config "${CONFIG:-Release}"
 
 echo "=== ccache per-file results ==="
