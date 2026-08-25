@@ -467,8 +467,15 @@ rpl::producer<int> MembersCountValue(not_null<PeerData*> peer) {
 			peer,
 			UpdateFlag::Members
 		) | rpl::map([=] {
+			// chat->count is the authoritative live counter (kept in
+			// sync by kicks/joins); only fall back to the loaded
+			// participants set when count itself hasn't been
+			// established yet, so a stale/larger participants.size()
+			// can't override an already-correct, smaller count.
 			return chat->amIn()
-				? std::max(chat->count, int(chat->participants.size()))
+				? (chat->count > 0
+					? chat->count
+					: int(chat->participants.size()))
 				: 0;
 		});
 	} else if (const auto channel = peer->asChannel()) {
