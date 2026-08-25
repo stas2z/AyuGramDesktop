@@ -28,6 +28,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_message_reactions.h"
 #include "data/data_folder.h"
 #include "data/data_changes.h"
+#include "hidden_users_manager.h"
 #include "data/data_channel.h"
 #include "data/data_chat.h"
 #include "data/data_user.h"
@@ -467,16 +468,30 @@ rpl::producer<int> MembersCountValue(not_null<PeerData*> peer) {
 			peer,
 			UpdateFlag::Members
 		) | rpl::map([=] {
+			if (!chat->amIn()) {
+				return 0;
+			}
 			// chat->count is the authoritative live counter (kept in
 			// sync by kicks/joins); only fall back to the loaded
 			// participants set when count itself hasn't been
 			// established yet, so a stale/larger participants.size()
 			// can't override an already-correct, smaller count.
-			return chat->amIn()
-				? (chat->count > 0
-					? chat->count
-					: int(chat->participants.size()))
-				: 0;
+			const auto count = (chat->count > 0)
+				? chat->count
+				: int(chat->participants.size());
+			// Keep a hidden user's presence fully invisible: if we
+			// know they're in this chat (loaded participants set),
+			// exclude them from the displayed count too, so it stays
+			// consistent with the (already filtered) member list -
+			// a "10" count next to a 9-row list would itself leak
+			// that someone is hidden.
+			auto hidden = 0;
+			for (const auto &user : chat->participants) {
+				if (HiddenUsersManager::Instance().isHidden(user->id)) {
+					++hidden;
+				}
+			}
+			return std::max(count - hidden, 0);
 		});
 	} else if (const auto channel = peer->asChannel()) {
 		return peer->session().changes().peerFlagsValue(
