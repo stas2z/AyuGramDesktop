@@ -2847,7 +2847,19 @@ void Updates::feedUpdate(const MTPUpdate &update) {
 	} break;
 
 	case mtpc_updateStory: {
-		_session->data().stories().apply(update.c_updateStory());
+		const auto &d = update.c_updateStory();
+		_session->data().stories().apply(d);
+		// AyuGram: posting a story is a real activity signal.
+		if (AyuSettings::getInstance().saveLastSeenDate()
+			&& d.vstory().type() != mtpc_storyItemDeleted) {
+			const auto peerId = peerFromMTP(d.vpeer());
+			if (peerIsUser(peerId)) {
+				if (const auto user = _session->data().userLoaded(
+						peerToUser(peerId))) {
+					user->madeAction(base::unixtime::now());
+				}
+			}
+		}
 	} break;
 
 	case mtpc_updateReadStories: {
