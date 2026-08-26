@@ -10,6 +10,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_changes.h"
 #include "data/data_channel.h"
 #include "data/data_chat.h"
+#include "hidden_users_manager.h"
 #include "data/data_community.h"
 #include "data/data_peer.h"
 #include "data/data_peer_values.h"
@@ -156,9 +157,12 @@ void StatusLabel::refresh() {
 					WithEntities);
 			}
 			const auto onlineCount = _onlineCount;
-			const auto fullCount = std::max(
-				chat->count,
-				int(chat->participants.size()));
+			const auto rawCount = (chat->count > 0)
+				? chat->count
+				: int(chat->participants.size());
+			const auto fullCount = HiddenUsers::VisibleMembersCount(
+				chat,
+				rawCount);
 			return MaybeHiddenPrefixed(
 				{ .text = ChatStatusText(fullCount, onlineCount, true) },
 				hidden);
@@ -181,7 +185,9 @@ void StatusLabel::refresh() {
 					hidden);
 			}
 			const auto onlineCount = _onlineCount;
-			const auto fullCount = channel->membersCount();
+			const auto fullCount = HiddenUsers::VisibleMembersCount(
+				channel,
+				channel->membersCount());
 			auto result = ChatStatusText(
 				fullCount,
 				onlineCount,
