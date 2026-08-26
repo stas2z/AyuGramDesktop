@@ -498,7 +498,21 @@ rpl::producer<int> MembersCountValue(not_null<PeerData*> peer) {
 			peer,
 			UpdateFlag::Members
 		) | rpl::map([=] {
-			return channel->membersCount();
+			// membersCount() is a raw server counter that doesn't know
+			// about local hiding. Megagroup participant lists are
+			// paginated (never fully loaded), so we can only subtract
+			// hidden users we've actually seen so far via mgInfo's
+			// locally-cached lastParticipants - same rationale as the
+			// basic-group branch above.
+			auto hidden = 0;
+			if (const auto info = channel->mgInfo.get()) {
+				for (const auto &user : info->lastParticipants) {
+					if (HiddenUsersManager::Instance().isHidden(user->id)) {
+						++hidden;
+					}
+				}
+			}
+			return std::max(channel->membersCount() - hidden, 0);
 		});
 	}
 	Unexpected("User in MembersCountViewer().");
