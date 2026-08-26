@@ -92,6 +92,7 @@ public:
 	explicit RecentRow(not_null<PeerData*> peer);
 
 	bool refreshBadge();
+	bool refreshMembersStatus();
 
 	QSize rightActionSize() const override;
 	QMargins rightActionMargins() const override;
@@ -257,6 +258,16 @@ RecentRow::RecentRow(not_null<PeerData*> peer)
 }()) {
 	if (peer->isSelf() || peer->isRepliesChat() || peer->isVerifyCodes()) {
 		setCustomStatus(u" "_q);
+	} else {
+		refreshMembersStatus();
+	}
+	refreshBadge();
+}
+
+bool RecentRow::refreshMembersStatus() {
+	const auto peer = this->peer();
+	if (peer->isSelf() || peer->isRepliesChat() || peer->isVerifyCodes()) {
+		return false;
 	} else if (const auto chat = peer->asChat()) {
 		if (chat->count > 0) {
 			setCustomStatus(
@@ -264,6 +275,7 @@ RecentRow::RecentRow(not_null<PeerData*> peer)
 					tr::now,
 					lt_count_decimal,
 					HiddenUsers::VisibleMembersCount(chat, chat->count)));
+			return true;
 		}
 	} else if (const auto channel = peer->asChannel()) {
 		if (!channel->isCommunity() && channel->membersCountKnown()) {
@@ -275,9 +287,10 @@ RecentRow::RecentRow(not_null<PeerData*> peer)
 					HiddenUsers::VisibleMembersCount(
 						channel,
 						channel->membersCount())));
+			return true;
 		}
 	}
-	refreshBadge();
+	return false;
 }
 
 bool RecentRow::refreshBadge() {
@@ -950,6 +963,7 @@ void RecentsController::subscribeToEvents() {
 	session().changes().peerUpdates(
 		Flag::Notifications
 		| Flag::OnlineStatus
+		| Flag::Members
 	) | rpl::on_next([=](const Data::PeerUpdate &update) {
 		const auto peer = update.peer;
 		if (peer->isSelf()) {
@@ -967,6 +981,11 @@ void RecentsController::subscribeToEvents() {
 			&& (update.flags & Flag::OnlineStatus)) {
 			row->clearCustomStatus();
 			refreshed = true;
+		}
+		if (update.flags & Flag::Members) {
+			if (static_cast<RecentRow*>(row)->refreshMembersStatus()) {
+				refreshed = true;
+			}
 		}
 		if (refreshed) {
 			delegate()->peerListUpdateRow(row);

@@ -52,6 +52,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_session.h"
 #include "data/data_stories.h"
 #include "data/data_channel.h"
+#include "hidden_users_manager.h"
 #include "data/data_chat.h"
 #include "data/data_user.h"
 #include "data/data_changes.h"
@@ -2011,7 +2012,10 @@ void TopBarWidget::updateOnlineDisplay() {
 			} else if (chat->count <= 0) {
 				text = tr::lng_group_status(tr::now);
 			} else {
-				text = tr::lng_chat_status_members(tr::now, lt_count_decimal, chat->count);
+				text = tr::lng_chat_status_members(
+					tr::now,
+					lt_count_decimal,
+					HiddenUsers::VisibleMembersCount(chat, chat->count));
 			}
 		} else {
 			const auto self = session().user();
@@ -2023,12 +2027,15 @@ void TopBarWidget::updateOnlineDisplay() {
 					if (onlyMe && user != self) onlyMe = false;
 				}
 			}
+			const auto visibleCount = HiddenUsers::VisibleMembersCount(
+				chat,
+				int(chat->participants.size()));
 			if (online > 0 && !onlyMe) {
-				auto membersCount = tr::lng_chat_status_members(tr::now, lt_count_decimal, chat->participants.size());
+				auto membersCount = tr::lng_chat_status_members(tr::now, lt_count_decimal, visibleCount);
 				auto onlineCount = tr::lng_chat_status_online(tr::now, lt_count, online);
 				text = tr::lng_chat_status_members_online(tr::now, lt_members_count, membersCount, lt_online_count, onlineCount);
-			} else if (chat->participants.size() > 0) {
-				text = tr::lng_chat_status_members(tr::now, lt_count_decimal, chat->participants.size());
+			} else if (visibleCount > 0) {
+				text = tr::lng_chat_status_members(tr::now, lt_count_decimal, visibleCount);
 			} else {
 				text = tr::lng_group_status(tr::now);
 			}
@@ -2061,19 +2068,25 @@ void TopBarWidget::updateOnlineDisplay() {
 					}
 				}
 			}
+			const auto visibleCount = HiddenUsers::VisibleMembersCount(
+				channel,
+				channel->membersCount());
 			if (online && !onlyMe) {
-				auto membersCount = tr::lng_chat_status_members(tr::now, lt_count_decimal, channel->membersCount());
+				auto membersCount = tr::lng_chat_status_members(tr::now, lt_count_decimal, visibleCount);
 				auto onlineCount = tr::lng_chat_status_online(tr::now, lt_count, online);
 				text = tr::lng_chat_status_members_online(tr::now, lt_members_count, membersCount, lt_online_count, onlineCount);
-			} else if (channel->membersCount() > 0) {
-				text = tr::lng_chat_status_members(tr::now, lt_count_decimal, channel->membersCount());
+			} else if (visibleCount > 0) {
+				text = tr::lng_chat_status_members(tr::now, lt_count_decimal, visibleCount);
 			} else {
 				text = tr::lng_group_status(tr::now);
 			}
 		} else if (channel->membersCount() > 0) {
+			const auto visibleCount = HiddenUsers::VisibleMembersCount(
+				channel,
+				channel->membersCount());
 			text = channel->isMegagroup()
-				? tr::lng_chat_status_members(tr::now, lt_count_decimal, channel->membersCount())
-				: tr::lng_chat_status_subscribers(tr::now, lt_count_decimal, channel->membersCount());
+				? tr::lng_chat_status_members(tr::now, lt_count_decimal, visibleCount)
+				: tr::lng_chat_status_subscribers(tr::now, lt_count_decimal, visibleCount);
 
 		} else {
 			text = channel->isMegagroup() ? tr::lng_group_status(tr::now) : tr::lng_channel_status(tr::now);
