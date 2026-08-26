@@ -16,6 +16,7 @@ public:
 
     void loadFromFile();
     bool isHidden(PeerId peerId) const;
+    bool hasAny() const;
 
 private:
     HiddenUsersManager();
@@ -45,5 +46,13 @@ namespace HiddenUsers {
 [[nodiscard]] int VisibleMembersCount(
 	not_null<PeerData*> peer,
 	int rawCount);
+
+// Whether we can trust VisibleMembersCount() not to still include a
+// hidden user we simply haven't loaded yet - true when no hidden
+// users are configured at all (nothing to leak), or when the peer's
+// participant list is fully loaded. Callers should avoid showing a
+// raw member count until this is true, to prevent a brief flash of
+// the un-subtracted number before participants finish loading.
+[[nodiscard]] bool CountKnown(not_null<PeerData*> peer);
 
 } // namespace HiddenUsers

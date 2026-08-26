@@ -2007,7 +2007,9 @@ void TopBarWidget::updateOnlineDisplay() {
 		if (!chat->amIn()) {
 			text = tr::lng_chat_status_unaccessible(tr::now);
 		} else if (chat->participants.empty()) {
-			if (!_titlePeerText.isEmpty()) {
+			if (!HiddenUsers::CountKnown(chat)) {
+				text = tr::lng_group_status(tr::now);
+			} else if (!_titlePeerText.isEmpty()) {
 				text = _titlePeerText.toString();
 			} else if (chat->count <= 0) {
 				text = tr::lng_group_status(tr::now);
@@ -2056,6 +2058,17 @@ void TopBarWidget::updateOnlineDisplay() {
 				<= channel->session().serverConfig().chatSizeMax)) {
 			if (channel->lastParticipantsRequestNeeded()) {
 				session().api().chatParticipants().requestLast(channel);
+			}
+			if (!HiddenUsers::CountKnown(channel)) {
+				text = tr::lng_group_status(tr::now);
+				if (_titlePeerText.toString() != text) {
+					_titlePeerText.setText(st::dialogsTextStyle, text);
+					_titlePeerTextOnline = titlePeerTextOnline;
+					updateMembersShowArea();
+					update();
+				}
+				updateOnlineDisplayTimer();
+				return;
 			}
 			const auto self = session().user();
 			auto online = 0;

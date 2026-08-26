@@ -170,6 +170,10 @@ bool HiddenUsersManager::isHidden(PeerId peerId) const {
     return result;
 }
 
+bool HiddenUsersManager::hasAny() const {
+    return !_hiddenUserIds.isEmpty();
+}
+
 namespace HiddenUsers {
 
 int VisibleMembersCount(not_null<PeerData*> peer, int rawCount) {
@@ -190,6 +194,25 @@ int VisibleMembersCount(not_null<PeerData*> peer, int rawCount) {
 		}
 	}
 	return std::max(rawCount - hidden, 0);
+}
+
+bool CountKnown(not_null<PeerData*> peer) {
+	if (!HiddenUsersManager::Instance().hasAny()) {
+		return true;
+	}
+	if (const auto chat = peer->asChat()) {
+		return (chat->count <= 0)
+			|| (int(chat->participants.size()) >= chat->count);
+	} else if (const auto channel = peer->asChannel()) {
+		if (!channel->isMegagroup()) {
+			return true;
+		}
+		const auto info = channel->mgInfo.get();
+		return info
+			&& (info->lastParticipantsStatus
+				& MegagroupInfo::LastParticipantsOnceReceived);
+	}
+	return true;
 }
 
 } // namespace HiddenUsers

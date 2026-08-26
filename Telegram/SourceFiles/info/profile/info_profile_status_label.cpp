@@ -116,6 +116,17 @@ StatusLabel::StatusLabel(
 			refresh();
 		}, _lifetime);
 	}
+	if (_peer->isChat() || _peer->isChannel()) {
+		// Members loading can complete after the label's first refresh -
+		// re-render once it does, so a "count unknown yet" placeholder
+		// (see HiddenUsers::CountKnown) doesn't get stuck.
+		_peer->session().changes().peerFlagsValue(
+			_peer,
+			Data::PeerUpdate::Flag::Members
+		) | rpl::on_next([=] {
+			refresh();
+		}, _lifetime);
+	}
 }
 
 void StatusLabel::setOnlineCount(int count) {
@@ -156,6 +167,12 @@ void StatusLabel::refresh() {
 					{},
 					WithEntities);
 			}
+			if (!HiddenUsers::CountKnown(chat)) {
+				// Avoid a brief flash of the un-subtracted count before
+				// the participant list (needed to know who's hidden)
+				// finishes loading.
+				return TextWithEntities{ .text = tr::lng_group_status(tr::now) };
+			}
 			const auto onlineCount = _onlineCount;
 			const auto rawCount = (chat->count > 0)
 				? chat->count
@@ -177,6 +194,14 @@ void StatusLabel::refresh() {
 			return TextWithEntities{ .text = result };
 		} else if (auto channel = _peer->asChannel()) {
 			if (!channel->membersCountKnown()) {
+				auto result = ChannelTypeText(channel);
+				return MaybeHiddenPrefixed(
+					hasMembersLink
+						? tr::link(result)
+						: TextWithEntities{ .text = result },
+					hidden);
+			}
+			if (!HiddenUsers::CountKnown(channel)) {
 				auto result = ChannelTypeText(channel);
 				return MaybeHiddenPrefixed(
 					hasMembersLink

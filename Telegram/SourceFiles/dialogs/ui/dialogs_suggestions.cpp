@@ -269,7 +269,7 @@ bool RecentRow::refreshMembersStatus() {
 	if (peer->isSelf() || peer->isRepliesChat() || peer->isVerifyCodes()) {
 		return false;
 	} else if (const auto chat = peer->asChat()) {
-		if (chat->count > 0) {
+		if (chat->count > 0 && HiddenUsers::CountKnown(chat)) {
 			setCustomStatus(
 				tr::lng_chat_status_members(
 					tr::now,
@@ -278,7 +278,9 @@ bool RecentRow::refreshMembersStatus() {
 			return true;
 		}
 	} else if (const auto channel = peer->asChannel()) {
-		if (!channel->isCommunity() && channel->membersCountKnown()) {
+		if (!channel->isCommunity()
+			&& channel->membersCountKnown()
+			&& HiddenUsers::CountKnown(channel)) {
 			setCustomStatus((channel->isBroadcast()
 				? tr::lng_chat_status_subscribers
 				: tr::lng_chat_status_members)(
