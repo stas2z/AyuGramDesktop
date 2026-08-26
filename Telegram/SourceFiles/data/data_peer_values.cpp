@@ -22,6 +22,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 // AyuGram includes
 #include "ayu/ayu_settings.h"
+#include "ayu/utils/last_seen_tracker.h"
 
 
 namespace Data {
@@ -70,18 +71,62 @@ std::optional<QString> OnlineTextSpecial(not_null<UserData*> user) {
 	return std::nullopt;
 }
 
-std::optional<QString> OnlineTextCommon(LastseenStatus status, TimeId now) {
+// AyuGram: formats a locally-tracked approximate last-seen time the
+// same way real "last seen" text is formatted (now/minutes/hours/
+// today/yesterday/date), but prefixed with "~" to mark it as an
+// estimate derived from observed activity, not real Telegram data.
+QString FormatApproxLastSeen(TimeId when, TimeId now) {
+	const auto minutes = (now - when) / 60;
+	if (!minutes) {
+		return u"~ "_q + tr::lng_status_lastseen_now(tr::now);
+	} else if (minutes < 60) {
+		return u"~ "_q + tr::lng_status_lastseen_minutes(tr::now, lt_count, minutes);
+	}
+	const auto hours = (now - when) / 3600;
+	if (hours < 12) {
+		return u"~ "_q + tr::lng_status_lastseen_hours(tr::now, lt_count, hours);
+	}
+	const auto onlineFull = base::unixtime::parse(when);
+	const auto nowFull = base::unixtime::parse(now);
+	const auto locale = QLocale();
+	if (onlineFull.date() == nowFull.date()) {
+		const auto onlineTime = locale.toString(onlineFull.time(), QLocale::ShortFormat);
+		return u"~ "_q + tr::lng_status_lastseen_today(tr::now, lt_time, onlineTime);
+	} else if (onlineFull.date().addDays(1) == nowFull.date()) {
+		const auto onlineTime = locale.toString(onlineFull.time(), QLocale::ShortFormat);
+		return u"~ "_q + tr::lng_status_lastseen_yesterday(tr::now, lt_time, onlineTime);
+	}
+	const auto date = locale.toString(onlineFull.date(), QLocale::ShortFormat);
+	return u"~ "_q + tr::lng_status_lastseen_date(tr::now, lt_date, date);
+}
+
+std::optional<QString> OnlineTextCommon(
+		LastseenStatus status,
+		TimeId now,
+		std::optional<TimeId> localLastSeen = std::nullopt) {
 	if (status.isOnline(now)) {
 		return tr::lng_status_online(tr::now);
 	} else if (status.isLongAgo()) {
 		return tr::lng_status_offline(tr::now);
 	} else if (status.isRecently()) {
+		if (localLastSeen) {
+			return FormatApproxLastSeen(*localLastSeen, now);
+		}
 		return tr::lng_status_recently(tr::now);
 	} else if (status.isWithinWeek()) {
+		if (localLastSeen) {
+			return FormatApproxLastSeen(*localLastSeen, now);
+		}
 		return tr::lng_status_last_week(tr::now);
 	} else if (status.isWithinMonth()) {
+		if (localLastSeen) {
+			return FormatApproxLastSeen(*localLastSeen, now);
+		}
 		return tr::lng_status_last_month(tr::now);
 	} else if (status.isHidden()) {
+		if (localLastSeen) {
+			return FormatApproxLastSeen(*localLastSeen, now);
+		}
 		return tr::lng_status_recently(tr::now);
 	}
 	return std::nullopt;
@@ -450,8 +495,11 @@ crl::time OnlineChangeTimeout(not_null<UserData*> user, TimeId now) {
 	return OnlineChangeTimeout(user->lastseen(), now);
 }
 
-QString OnlineText(Data::LastseenStatus status, TimeId now) {
-	if (const auto common = OnlineTextCommon(status, now)) {
+QString OnlineText(
+		Data::LastseenStatus status,
+		TimeId now,
+		std::optional<TimeId> localLastSeen) {
+	if (const auto common = OnlineTextCommon(status, now, localLastSeen)) {
 		return *common;
 	}
 	const auto till = status.onlineTill();
@@ -480,17 +528,27 @@ QString OnlineText(Data::LastseenStatus status, TimeId now) {
 	return tr::lng_status_lastseen_date(tr::now, lt_date, date);
 }
 
+std::optional<TimeId> LocalLastSeenFor(not_null<UserData*> user) {
+	if (!AyuSettings::getInstance().saveLastSeenDate()) {
+		return std::nullopt;
+	}
+	return LastSeenTracker::Instance().lastSeen(peerToUser(user->id));
+}
+
 QString OnlineText(not_null<UserData*> user, TimeId now) {
 	if (const auto special = OnlineTextSpecial(user)) {
 		return *special;
 	}
-	return OnlineText(user->lastseen(), now);
+	return OnlineText(user->lastseen(), now, LocalLastSeenFor(user));
 }
 
 QString OnlineTextFull(not_null<UserData*> user, TimeId now) {
 	if (const auto special = OnlineTextSpecial(user)) {
 		return *special;
-	} else if (const auto common = OnlineTextCommon(user->lastseen(), now)) {
+	} else if (const auto common = OnlineTextCommon(
+			user->lastseen(),
+			now,
+			LocalLastSeenFor(user))) {
 		return *common;
 	}
 	const auto &settings = AyuSettings::getInstance();

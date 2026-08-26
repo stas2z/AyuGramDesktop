@@ -654,6 +654,16 @@ void BuildSpyEssentials(SectionBuilder &builder, AyuSectionBuilder &ayu) {
 	ayu.addSectionDivider();
 
 	ayu.addSettingToggle({
+		.id = u"ayu/saveLastSeenDate"_q,
+		.title = tr::ayu_SpySaveLocalOnline(),
+		.getter = &AyuSettings::saveLastSeenDate,
+		.setter = &AyuSettings::setSaveLastSeenDate,
+	});
+	builder.addDividerText(tr::ayu_SpySaveLocalOnlineDescription());
+
+	ayu.addSectionDivider();
+
+	ayu.addSettingToggle({
 		.id = u"ayu/saveForBots"_q,
 		.title = tr::ayu_MessageSavingSaveForBots(),
 		.getter = &AyuSettings::saveForBots,

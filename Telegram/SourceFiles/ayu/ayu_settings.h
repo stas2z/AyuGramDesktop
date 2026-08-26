@@ -269,6 +269,7 @@ public:
 
 	[[nodiscard]] bool saveDeletedMessages() const { return _saveDeletedMessages.current(); }
 	[[nodiscard]] bool saveMessagesHistory() const { return _saveMessagesHistory.current(); }
+	[[nodiscard]] bool saveLastSeenDate() const { return _saveLastSeenDate.current(); }
 	[[nodiscard]] bool saveForBots() const { return _saveForBots.current(); }
 	[[nodiscard]] bool filtersEnabled() const { return _filtersEnabled.current(); }
 	[[nodiscard]] bool filtersEnabledInChats() const { return _filtersEnabledInChats.current(); }
@@ -356,6 +357,7 @@ public:
 
 	void setSaveDeletedMessages(bool val);
 	void setSaveMessagesHistory(bool val);
+	void setSaveLastSeenDate(bool val);
 	void setSaveForBots(bool val);
 	void setFiltersEnabled(bool val);
 	void setFiltersEnabledInChats(bool val);
@@ -626,6 +628,7 @@ private:
 
 	rpl::variable<bool> _saveDeletedMessages = true;
 	rpl::variable<bool> _saveMessagesHistory = true;
+	rpl::variable<bool> _saveLastSeenDate = false;
 	rpl::variable<bool> _saveForBots = false;
 	std::unordered_set<int64> _shadowBanIds;
 	rpl::variable<bool> _filtersEnabled = false;

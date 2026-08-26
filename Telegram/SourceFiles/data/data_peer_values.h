@@ -159,7 +159,10 @@ inline auto PeerFullFlagValue(
 [[nodiscard]] crl::time OnlineChangeTimeout(
 	not_null<UserData*> user,
 	TimeId now);
-[[nodiscard]] QString OnlineText(LastseenStatus status, TimeId now);
+[[nodiscard]] QString OnlineText(
+	LastseenStatus status,
+	TimeId now,
+	std::optional<TimeId> localLastSeen = std::nullopt);
 [[nodiscard]] QString OnlineText(not_null<UserData*> user, TimeId now);
 [[nodiscard]] QString OnlineTextFull(not_null<UserData*> user, TimeId now);
 [[nodiscard]] bool OnlineTextActive(not_null<UserData*> user, TimeId now);

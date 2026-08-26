@@ -544,6 +544,12 @@ void AyuSettings::setSaveMessagesHistory(bool val) {
 	save();
 }
 
+void AyuSettings::setSaveLastSeenDate(bool val) {
+	if (_saveLastSeenDate.current() == val) return;
+	_saveLastSeenDate = val;
+	save();
+}
+
 void AyuSettings::setSaveForBots(bool val) {
 	if (_saveForBots.current() == val) return;
 	_saveForBots = val;
@@ -1080,6 +1086,7 @@ void to_json(nlohmann::json &j, const AyuSettings &s) {
 		{"useGlobalGhostMode", s._useGlobalGhostMode.current()},
 		{"saveDeletedMessages", s._saveDeletedMessages.current()},
 		{"saveMessagesHistory", s._saveMessagesHistory.current()},
+		{"saveLastSeenDate", s._saveLastSeenDate.current()},
 		{"saveForBots", s._saveForBots.current()},
 		{"shadowBanIds", s._shadowBanIds},
 		{"filtersEnabled", s._filtersEnabled.current()},
@@ -1184,6 +1191,7 @@ void from_json(const nlohmann::json &j, AyuSettings &s) {
 	s._useGlobalGhostMode = j.value("useGlobalGhostMode", defaults._useGlobalGhostMode.current());
 	s._saveDeletedMessages = j.value("saveDeletedMessages", defaults._saveDeletedMessages.current());
 	s._saveMessagesHistory = j.value("saveMessagesHistory", defaults._saveMessagesHistory.current());
+	s._saveLastSeenDate = j.value("saveLastSeenDate", defaults._saveLastSeenDate.current());
 	s._saveForBots = j.value("saveForBots", defaults._saveForBots.current());
 	s._shadowBanIds = j.value("shadowBanIds", defaults._shadowBanIds);
 	s._filtersEnabled = j.value("filtersEnabled", defaults._filtersEnabled.current());
