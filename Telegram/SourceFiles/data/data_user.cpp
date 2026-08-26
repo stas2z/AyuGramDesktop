@@ -42,7 +42,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 // AyuGram includes
 #include "ayu/ayu_settings.h"
 #include "ayu/utils/telegram_helpers.h"
-#include "ayu/utils/last_seen_tracker.h"
 
 
 namespace {
@@ -541,14 +540,6 @@ void UserData::setNameOrPhone(const QString &newNameOrPhone) {
 void UserData::madeAction(TimeId when) {
 	if (isBot() || isServiceUser() || when <= 0) {
 		return;
-	}
-	// AyuGram: every madeAction() call is a real signal of activity
-	// (new message, typing, read receipt, etc.) - remember the
-	// timestamp so we can still show an approximate last-seen after
-	// the short-lived pseudo-online window below expires and the
-	// server's next hidden-status push would otherwise erase it.
-	if (AyuSettings::getInstance().saveLastSeenDate()) {
-		LastSeenTracker::Instance().noteActivity(this, when);
 	}
 	const auto till = lastseen().onlineTill();
 	if (till < when + 1

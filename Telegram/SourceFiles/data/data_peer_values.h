@@ -10,6 +10,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_peer.h"
 #include "data/data_peer_values.h"
 #include "data/data_chat_participant_status.h"
+#include "ayu/utils/last_seen_tracker.h"
 
 enum class ImageRoundRadius;
 
@@ -162,7 +163,7 @@ inline auto PeerFullFlagValue(
 [[nodiscard]] QString OnlineText(
 	LastseenStatus status,
 	TimeId now,
-	std::optional<TimeId> localLastSeen = std::nullopt);
+	std::optional<LastSeenTracker::Point> localLastSeen = std::nullopt);
 [[nodiscard]] QString OnlineText(not_null<UserData*> user, TimeId now);
 [[nodiscard]] QString OnlineTextFull(not_null<UserData*> user, TimeId now);
 [[nodiscard]] bool OnlineTextActive(not_null<UserData*> user, TimeId now);

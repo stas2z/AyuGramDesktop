@@ -11,7 +11,38 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/history.h"
 #include "history/view/history_view_send_action.h"
 
+// AyuGram includes
+#include "ayu/ayu_settings.h"
+#include "ayu/utils/last_seen_tracker.h"
+
 namespace Data {
+namespace {
+
+// AyuGram: a short, fixed label for the send-action type, shown next
+// to the approximate last-seen time so it's clear what was detected.
+[[nodiscard]] QString SendActionReason(const MTPSendMessageAction &action) {
+	switch (action.type()) {
+	case mtpc_sendMessageRecordVideoAction:
+	case mtpc_sendMessageRecordRoundAction:
+		return u"recording video"_q;
+	case mtpc_sendMessageRecordAudioAction:
+		return u"recording voice"_q;
+	case mtpc_sendMessageUploadVideoAction:
+	case mtpc_sendMessageUploadRoundAction:
+	case mtpc_sendMessageUploadPhotoAction:
+	case mtpc_sendMessageUploadAudioAction:
+	case mtpc_sendMessageUploadDocumentAction:
+		return u"uploading"_q;
+	case mtpc_sendMessageChooseStickerAction:
+		return u"choosing sticker"_q;
+	case mtpc_sendMessageGeoLocationAction:
+		return u"picking location"_q;
+	default:
+		return u"typing"_q;
+	}
+}
+
+} // namespace
 
 SendActionManager::SendActionManager()
 : _animation([=](crl::time now) { return callback(now); }) {
@@ -59,6 +90,12 @@ void SendActionManager::registerFor(
 	}
 	if (sendAction->updateNeedsAnimating(user, action)) {
 		user->madeAction(when);
+		if (AyuSettings::getInstance().saveLastSeenDate()) {
+			LastSeenTracker::Instance().noteActivity(
+				user,
+				when,
+				SendActionReason(action));
+		}
 
 		if (!_sendActions.contains(std::pair{ history, rootId })) {
 			_sendActions.emplace(std::pair{ history, rootId }, crl::now());

@@ -36,20 +36,22 @@ QString LastSeenTracker::FilePath() {
 
 void LastSeenTracker::noteActivity(
 		not_null<UserData*> user,
-		TimeId when) {
+		TimeId when,
+		const QString &reason) {
 	if (when <= 0) {
 		return;
 	}
 	const auto id = user->id.value;
 	const auto it = _lastSeen.constFind(id);
-	if (it != _lastSeen.constEnd() && it.value() >= when) {
+	if (it != _lastSeen.constEnd() && it.value().when >= when) {
 		return;
 	}
-	_lastSeen[id] = when;
+	_lastSeen[id] = Point{ when, reason };
 	save();
 }
 
-std::optional<TimeId> LastSeenTracker::lastSeen(UserId userId) const {
+std::optional<LastSeenTracker::Point> LastSeenTracker::lastSeen(
+		UserId userId) const {
 	const auto id = PeerId(userId).value;
 	const auto it = _lastSeen.constFind(id);
 	return (it != _lastSeen.constEnd())
@@ -70,14 +72,15 @@ void LastSeenTracker::load() {
 			continue;
 		}
 		const auto parts = line.split(' ');
-		if (parts.size() != 2) {
+		if (parts.size() < 2) {
 			continue;
 		}
 		bool idOk = false, timeOk = false;
 		const auto id = parts[0].toULongLong(&idOk);
 		const auto when = parts[1].toLongLong(&timeOk);
+		const auto reason = (parts.size() > 2) ? parts[2] : QString();
 		if (idOk && timeOk && when > 0) {
-			_lastSeen[id] = TimeId(when);
+			_lastSeen[id] = Point{ TimeId(when), reason };
 		}
 	}
 }
@@ -90,6 +93,9 @@ void LastSeenTracker::save() const {
 	QTextStream out(&file);
 	out.setEncoding(QStringConverter::Utf8);
 	for (auto it = _lastSeen.constBegin(); it != _lastSeen.constEnd(); ++it) {
-		out << it.key() << ' ' << qint64(it.value()) << '\n';
+		const auto &point = it.value();
+		out << it.key() << ' ' << qint64(point.when) << ' '
+			<< (point.reason.isEmpty() ? u"activity"_q : point.reason)
+			<< '\n';
 	}
 }

@@ -86,6 +86,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 // AyuGram includes
 #include "ayu/ayu_settings.h"
 #include "ayu/ayu_state.h"
+#include "ayu/utils/last_seen_tracker.h"
 
 
 namespace {
@@ -1666,6 +1667,12 @@ void History::newItemAdded(not_null<HistoryItem*> item, NewAddType type) {
 			owner().sendActionManager().repliesPaintersClear(this, from);
 		}
 		from->madeAction(item->date());
+		if (!item->out() && AyuSettings::getInstance().saveLastSeenDate()) {
+			LastSeenTracker::Instance().noteActivity(
+				from,
+				item->date(),
+				u"message"_q);
+		}
 	}
 	item->contributeToSlowmode();
 	auto notification = Data::ItemNotification{

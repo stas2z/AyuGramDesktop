@@ -76,6 +76,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 // AyuGram includes
 #include "ayu/ayu_settings.h"
 #include "ayu/ayu_worker.h"
+#include "ayu/utils/last_seen_tracker.h"
 
 
 namespace Api {
@@ -1345,7 +1346,14 @@ void Updates::applyUpdateNoPtsCheck(const MTPUpdate &update) {
 					if (item->out()) {
 						const auto user = item->history()->peer->asUser();
 						if (user && !requestingDifference()) {
-							user->madeAction(base::unixtime::now());
+							const auto now = base::unixtime::now();
+							user->madeAction(now);
+							if (AyuSettings::getInstance().saveLastSeenDate()) {
+								LastSeenTracker::Instance().noteActivity(
+									user,
+									now,
+									u"read"_q);
+							}
 						}
 					}
 					item->clearMediaAsExpired();
@@ -1377,7 +1385,14 @@ void Updates::applyUpdateNoPtsCheck(const MTPUpdate &update) {
 			history->outboxRead(d.vmax_id().v);
 			if (!requestingDifference()) {
 				if (const auto user = history->peer->asUser()) {
-					user->madeAction(base::unixtime::now());
+					const auto now = base::unixtime::now();
+					user->madeAction(now);
+					if (AyuSettings::getInstance().saveLastSeenDate()) {
+						LastSeenTracker::Instance().noteActivity(
+							user,
+							now,
+							u"read"_q);
+					}
 				}
 			}
 		}
@@ -1826,7 +1841,14 @@ void Updates::feedUpdate(const MTPUpdate &update) {
 			history->outboxRead(d.vmax_id().v);
 			if (!requestingDifference()) {
 				if (const auto user = history->peer->asUser()) {
-					user->madeAction(base::unixtime::now());
+					const auto now = base::unixtime::now();
+					user->madeAction(now);
+					if (AyuSettings::getInstance().saveLastSeenDate()) {
+						LastSeenTracker::Instance().noteActivity(
+							user,
+							now,
+							u"read"_q);
+					}
 				}
 			}
 		}
@@ -2112,6 +2134,16 @@ void Updates::feedUpdate(const MTPUpdate &update) {
 		if (const auto user = session().data().userLoaded(d.vuser_id())) {
 			if (user->wasFullUpdated()) {
 				user->updateFullForced();
+			}
+			// AyuGram: generic "something about this user changed"
+			// push - less precise than the other signals (could be
+			// unrelated to their own activity), but still worth
+			// noting, labeled distinctly so it reads as a weaker hint.
+			if (AyuSettings::getInstance().saveLastSeenDate()) {
+				LastSeenTracker::Instance().noteActivity(
+					user,
+					base::unixtime::now(),
+					u"profile update"_q);
 			}
 		}
 	} break;
@@ -2856,7 +2888,12 @@ void Updates::feedUpdate(const MTPUpdate &update) {
 			if (peerIsUser(peerId)) {
 				if (const auto user = _session->data().userLoaded(
 						peerToUser(peerId))) {
-					user->madeAction(base::unixtime::now());
+					const auto now = base::unixtime::now();
+					user->madeAction(now);
+					LastSeenTracker::Instance().noteActivity(
+						user,
+						now,
+						u"story"_q);
 				}
 			}
 		}
