@@ -1,5 +1,8 @@
 #include "hidden_users_manager.h"
+#include "data/data_channel.h"
+#include "data/data_chat.h"
 #include "data/data_peer_id.h"
+#include "data/data_user.h"
 #include <QFile>
 #include <QTextStream>
 #include <QDir>
@@ -166,3 +169,27 @@ bool HiddenUsersManager::isHidden(PeerId peerId) const {
     }
     return result;
 }
+
+namespace HiddenUsers {
+
+int VisibleMembersCount(not_null<PeerData*> peer, int rawCount) {
+	auto hidden = 0;
+	if (const auto chat = peer->asChat()) {
+		for (const auto &user : chat->participants) {
+			if (HiddenUsersManager::Instance().isHidden(user->id)) {
+				++hidden;
+			}
+		}
+	} else if (const auto channel = peer->asChannel()) {
+		if (const auto info = channel->mgInfo.get()) {
+			for (const auto &user : info->lastParticipants) {
+				if (HiddenUsersManager::Instance().isHidden(user->id)) {
+					++hidden;
+				}
+			}
+		}
+	}
+	return std::max(rawCount - hidden, 0);
+}
+
+} // namespace HiddenUsers

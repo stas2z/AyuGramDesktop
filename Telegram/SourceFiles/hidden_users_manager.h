@@ -1,11 +1,14 @@
 #pragma once
 
+#include "base/basic_types.h"
 #include "data/data_peer_id.h"
 #include <QDateTime>
 #include <QFileSystemWatcher>
 #include <QSet>
 #include <QString>
 #include <QTimer>
+
+class PeerData;
 
 class HiddenUsersManager {
 public:
@@ -30,3 +33,17 @@ private:
     QString _watchedPath;
     QDateTime _lastModified;
 };
+
+namespace HiddenUsers {
+
+// Best-effort member count with hidden users excluded, using only
+// locally-known participants (chat->participants for basic groups,
+// mgInfo->lastParticipants for megagroups - full member lists aren't
+// always loaded, so this can't be exact for large/unloaded groups).
+// rawCount is the peer's own already-known counter (chat->count /
+// channel->membersCount()) to subtract from.
+[[nodiscard]] int VisibleMembersCount(
+	not_null<PeerData*> peer,
+	int rawCount);
+
+} // namespace HiddenUsers

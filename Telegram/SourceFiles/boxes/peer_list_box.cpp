@@ -31,6 +31,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_peer_values.h"
 #include "data/data_channel.h"
 #include "data/data_chat.h"
+#include "hidden_users_manager.h"
 #include "data/data_session.h"
 #include "data/data_changes.h"
 #include "data/stickers/data_custom_emoji.h"
@@ -743,7 +744,10 @@ void PeerListRow::refreshStatus() {
 		if (!chat->amIn()) {
 			setStatusText(tr::lng_chat_status_unaccessible(tr::now));
 		} else if (chat->count > 0) {
-			setStatusText(tr::lng_chat_status_members(tr::now, lt_count_decimal, chat->count));
+			setStatusText(tr::lng_chat_status_members(
+				tr::now,
+				lt_count_decimal,
+				HiddenUsers::VisibleMembersCount(chat, chat->count)));
 		} else {
 			setStatusText(tr::lng_group_status(tr::now));
 		}

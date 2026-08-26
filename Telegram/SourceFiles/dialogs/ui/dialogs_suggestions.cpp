@@ -20,6 +20,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/stickers/data_custom_emoji.h"
 #include "data/data_changes.h"
 #include "data/data_channel.h"
+#include "hidden_users_manager.h"
 #include "data/data_chat.h"
 #include "data/data_chat_filters.h"
 #include "data/data_download_manager.h"
@@ -262,7 +263,7 @@ RecentRow::RecentRow(not_null<PeerData*> peer)
 				tr::lng_chat_status_members(
 					tr::now,
 					lt_count_decimal,
-					chat->count));
+					HiddenUsers::VisibleMembersCount(chat, chat->count)));
 		}
 	} else if (const auto channel = peer->asChannel()) {
 		if (!channel->isCommunity() && channel->membersCountKnown()) {
@@ -271,7 +272,9 @@ RecentRow::RecentRow(not_null<PeerData*> peer)
 				: tr::lng_chat_status_members)(
 					tr::now,
 					lt_count_decimal,
-					channel->membersCount()));
+					HiddenUsers::VisibleMembersCount(
+						channel,
+						channel->membersCount())));
 		}
 	}
 	refreshBadge();
@@ -1089,7 +1092,9 @@ void MyChannelsController::appendRow(not_null<ChannelData*> channel) {
 			: tr::lng_chat_status_members)(
 				tr::now,
 				lt_count_decimal,
-				channel->membersCount()));
+				HiddenUsers::VisibleMembersCount(
+					channel,
+					channel->membersCount())));
 	}
 	delegate()->peerListAppendRow(std::move(row));
 }
@@ -1179,7 +1184,9 @@ void RecommendationsController::appendRow(not_null<ChannelData*> channel) {
 			: tr::lng_chat_status_members)(
 				tr::now,
 				lt_count_decimal,
-				channel->membersCount()));
+				HiddenUsers::VisibleMembersCount(
+					channel,
+					channel->membersCount())));
 	}
 	delegate()->peerListAppendRow(std::move(row));
 }

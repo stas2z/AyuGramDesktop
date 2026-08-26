@@ -479,40 +479,16 @@ rpl::producer<int> MembersCountValue(not_null<PeerData*> peer) {
 			const auto count = (chat->count > 0)
 				? chat->count
 				: int(chat->participants.size());
-			// Keep a hidden user's presence fully invisible: if we
-			// know they're in this chat (loaded participants set),
-			// exclude them from the displayed count too, so it stays
-			// consistent with the (already filtered) member list -
-			// a "10" count next to a 9-row list would itself leak
-			// that someone is hidden.
-			auto hidden = 0;
-			for (const auto &user : chat->participants) {
-				if (HiddenUsersManager::Instance().isHidden(user->id)) {
-					++hidden;
-				}
-			}
-			return std::max(count - hidden, 0);
+			return HiddenUsers::VisibleMembersCount(chat, count);
 		});
 	} else if (const auto channel = peer->asChannel()) {
 		return peer->session().changes().peerFlagsValue(
 			peer,
 			UpdateFlag::Members
 		) | rpl::map([=] {
-			// membersCount() is a raw server counter that doesn't know
-			// about local hiding. Megagroup participant lists are
-			// paginated (never fully loaded), so we can only subtract
-			// hidden users we've actually seen so far via mgInfo's
-			// locally-cached lastParticipants - same rationale as the
-			// basic-group branch above.
-			auto hidden = 0;
-			if (const auto info = channel->mgInfo.get()) {
-				for (const auto &user : info->lastParticipants) {
-					if (HiddenUsersManager::Instance().isHidden(user->id)) {
-						++hidden;
-					}
-				}
-			}
-			return std::max(channel->membersCount() - hidden, 0);
+			return HiddenUsers::VisibleMembersCount(
+				channel,
+				channel->membersCount());
 		});
 	}
 	Unexpected("User in MembersCountViewer().");
