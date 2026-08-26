@@ -108,123 +108,17 @@ jobs:
             ayugram-ccache-${{ runner.os }}-${{ steps.image.outputs.key }}-
 
       # ============================================================
-      # CMAKE / OBJECT CACHE
-      #
-      # Меняем namespace кеша при:
-      # - обновлении Docker toolchain;
-      # - обновлении submodules;
-      # - изменении структуры CMake.
-      #
-      # Обычные изменения .cpp/.h кеш НЕ инвалидируют.
-      # ============================================================
-
-      - name: Restore incremental build
-        id: buildcache
-        uses: actions/cache/restore@v4
-        with:
-          path: out
-
-          key: >-
-            ayugram-out-${{
-              runner.os
-            }}-${{
-              steps.image.outputs.key
-            }}-${{
-              steps.submodules.outputs.key
-            }}-${{
-              hashFiles(
-                '**/CMakeLists.txt',
-                '**/*.cmake',
-                'Telegram/configure.py',
-                'Telegram/configure.sh',
-                'Telegram/Resources/langs/lang.strings'
-              )
-            }}-${{
-              github.run_id
-            }}
-
-          # Fallback restore-keys deliberately DROPS the hashFiles(...)
-          # component that's in the exact key above. If it were kept,
-          # restore-keys would be byte-for-byte identical to the exact
-          # key and could never actually serve as a fallback - any
-          # hashFiles() mismatch (even a spurious one) would mean no
-          # cache is found at all instead of falling back to the most
-          # recent one for the same image+submodules combo.
-          restore-keys: |
-            ayugram-out-${{ runner.os }}-${{ steps.image.outputs.key }}-${{ steps.submodules.outputs.key }}-
-
-      # ============================================================
-      # FIX MTIMES FOR NINJA
-      #
-      # Без этого GitHub checkout делает исходники "новее"
-      # восстановленных object files.
-      # ============================================================
-
-      - name: Prepare incremental build
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if [ ! -f out/.ci-cache-base-sha ]; then
-            echo "No previous incremental build found."
-            exit 0
-          fi
-
-          BASE_SHA="$(cat out/.ci-cache-base-sha)"
-
-          echo "Cached commit: $BASE_SHA"
-          echo "Current commit: $GITHUB_SHA"
-
-          if ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
-            echo "Cached commit is unavailable."
-            echo "Dropping out cache."
-            rm -rf out
-            exit 0
-          fi
-
-          if ! git merge-base --is-ancestor \
-            "$BASE_SHA" "$GITHUB_SHA"
-          then
-            echo "History diverged / branch was rebased."
-            echo "Dropping out cache."
-            rm -rf out
-            exit 0
-          fi
-
-          echo "Reusing previous CMake/Ninja build."
-
-          #
-          # Делаем сохранённые build outputs новее checkout-файлов.
-          #
-          find out -type f -exec touch {} +
-
-          #
-          # Затем реальные изменённые исходники делаем ещё новее.
-          #
-          sleep 1
-
-          echo "Changed files since cached build:"
-
-          git diff \
-            --name-only \
-            --diff-filter=ACMRTUXB \
-            "$BASE_SHA" \
-            "$GITHUB_SHA"
-
-          git diff \
-            --name-only \
-            --diff-filter=ACMRTUXB \
-            -z \
-            "$BASE_SHA" \
-            "$GITHUB_SHA" \
-          | while IFS= read -r -d '' file; do
-              if [ -f "$file" ]; then
-                touch "$file"
-              fi
-            done
-
-      # ============================================================
       # BUILD
+      #
+      # No out/ incremental-build cache: comparing against upstream
+      # tdesktop's own CI (which does a fresh configure into an empty
+      # out/ every run, no out/ caching at all) showed ~95% ccache hit
+      # rate there vs. our persistent ~35% despite restoring out/ from
+      # a previous run. Reusing a partially-stale out/ tree (mixed
+      # freshly-checked-out sources with old generated codegen output)
+      # was likely poisoning ccache more than the ninja-graph-skip was
+      # saving. Rely purely on ccache with a clean configure each time,
+      # matching upstream's approach.
       # ============================================================
 
       - name: Build AyuGram
@@ -272,21 +166,11 @@ jobs:
               -D TDESKTOP_API_HASH="$API_HASH"
 
       # ============================================================
-      # SAVE CURRENT COMMIT INTO OUT CACHE
-      #
-      # Сохраняем кеш сразу после успешной сборки, не дожидаясь
-      # Check build / Package - если они упадут, отстроенный out/
-      # и ccache всё равно не должны пропадать.
-      # ============================================================
-
-      - name: Mark incremental build revision
-        if: steps.build.outcome == 'success'
-        shell: bash
-        run: |
-          echo "$GITHUB_SHA" > out/.ci-cache-base-sha
-
-      # ============================================================
       # SAVE CCACHE
+      #
+      # Сохраняем сразу после успешной сборки, не дожидаясь
+      # Check build / Package - если они упадут, ccache всё равно не
+      # должен пропадать.
       # ============================================================
 
       - name: Save ccache
@@ -300,35 +184,6 @@ jobs:
               runner.os
             }}-${{
               steps.image.outputs.key
-            }}-${{
-              github.run_id
-            }}
-
-      # ============================================================
-      # SAVE OUT
-      # ============================================================
-
-      - name: Save incremental build
-        if: steps.build.outcome == 'success'
-        uses: actions/cache/save@v4
-        with:
-          path: out
-
-          key: >-
-            ayugram-out-${{
-              runner.os
-            }}-${{
-              steps.image.outputs.key
-            }}-${{
-              steps.submodules.outputs.key
-            }}-${{
-              hashFiles(
-                '**/CMakeLists.txt',
-                '**/*.cmake',
-                'Telegram/configure.py',
-                'Telegram/configure.sh',
-                'Telegram/Resources/langs/lang.strings'
-              )
             }}-${{
               github.run_id
             }}
