@@ -76,7 +76,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 // AyuGram includes
 #include "ayu/ayu_settings.h"
 #include "ayu/ayu_worker.h"
-#include "ayu/utils/last_seen_tracker.h"
 
 
 namespace Api {
@@ -1116,15 +1115,6 @@ void Updates::handleSendActionUpdate(
 	if (!from || !from->isUser() || from->isSelf()) {
 		return;
 	}
-	if (AyuSettings::getInstance().saveLastSeenDate() && when > 0) {
-		// AyuGram: any send-action push (typing, recording, uploading,
-		// etc.) is a strong real-time online signal, regardless of
-		// whether the user's status itself is hidden.
-		LastSeenTracker::Instance().noteActivity(from->asUser(), when);
-		session().changes().peerUpdated(
-			from,
-			Data::PeerUpdate::Flag::OnlineStatus);
-	}
 	if (action.type() == mtpc_sendMessageEmojiInteraction) {
 		handleEmojiInteraction(peer, action.c_sendMessageEmojiInteraction());
 		return;
@@ -2075,21 +2065,6 @@ void Updates::feedUpdate(const MTPUpdate &update) {
 		if (const auto user = session().data().userLoaded(d.vuser_id())) {
 			const auto now = LastseenFromMTP(d.vstatus(), user->lastseen());
 			if (user->updateLastseen(now)) {
-				session().changes().peerUpdated(
-					user,
-					Data::PeerUpdate::Flag::OnlineStatus);
-			}
-			// AyuGram: the server just pushed a status transition for
-			// this user - if the resulting status doesn't carry an
-			// exact time (privacy hidden), the arrival of this push
-			// itself is a signal they were active a moment ago. Record
-			// it as an approximate last-seen point.
-			if (AyuSettings::getInstance().saveLastSeenDate()
-				&& !now.onlineTill()
-				&& !now.isLongAgo()) {
-				LastSeenTracker::Instance().noteActivity(
-					user,
-					base::unixtime::now());
 				session().changes().peerUpdated(
 					user,
 					Data::PeerUpdate::Flag::OnlineStatus);

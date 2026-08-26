@@ -86,7 +86,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 // AyuGram includes
 #include "ayu/ayu_settings.h"
 #include "ayu/ayu_state.h"
-#include "ayu/utils/last_seen_tracker.h"
 
 
 namespace {
@@ -657,16 +656,6 @@ not_null<HistoryItem*> History::addNewMessage(
 	}
 	if (newMessage && item->isHistoryEntry()) {
 		applyMessageChanges(item, message);
-	}
-	if (newMessage
-		&& !item->out()
-		&& AyuSettings::getInstance().saveLastSeenDate()) {
-		if (const auto user = item->from()->asUser()) {
-			LastSeenTracker::Instance().noteActivity(user, item->date());
-			session().changes().peerUpdated(
-				user,
-				Data::PeerUpdate::Flag::OnlineStatus);
-		}
 	}
 	return addNewItem(item, newMessage);
 }
