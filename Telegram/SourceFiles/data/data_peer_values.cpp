@@ -509,6 +509,13 @@ QString OnlineText(
 	}
 	const auto till = status.onlineTill();
 	Assert(till > 0);
+	// AyuGram: the server gave us a real exact time here (not hidden),
+	// but our locally-observed activity can still be more recent (e.g.
+	// they're typing right now while the server's last pushed "last
+	// seen" is from an hour ago) - show whichever is newer.
+	if (localLastSeen && localLastSeen->when > till) {
+		return FormatApproxLastSeen(*localLastSeen, now);
+	}
 	const auto minutes = (now - till) / 60;
 	if (!minutes) {
 		return tr::lng_status_lastseen_now(tr::now);
@@ -549,16 +556,22 @@ QString OnlineText(not_null<UserData*> user, TimeId now) {
 }
 
 QString OnlineTextFull(not_null<UserData*> user, TimeId now) {
+	const auto localLastSeen = LocalLastSeenFor(user);
 	if (const auto special = OnlineTextSpecial(user)) {
 		return *special;
 	} else if (const auto common = OnlineTextCommon(
 			user->lastseen(),
 			now,
-			LocalLastSeenFor(user))) {
+			localLastSeen)) {
 		return *common;
 	}
-	const auto &settings = AyuSettings::getInstance();
 	const auto till = user->lastseen().onlineTill();
+	// AyuGram: prefer whichever is more recent - see OnlineText() above
+	// for the rationale.
+	if (localLastSeen && localLastSeen->when > till) {
+		return FormatApproxLastSeen(*localLastSeen, now);
+	}
+	const auto &settings = AyuSettings::getInstance();
 	const auto onlineFull = base::unixtime::parse(till);
 	const auto nowFull = base::unixtime::parse(now);
 	const auto locale = QLocale();
