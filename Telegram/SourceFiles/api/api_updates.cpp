@@ -2103,7 +2103,7 @@ void Updates::feedUpdate(const MTPUpdate &update) {
 				LastSeenTracker::Instance().noteActivity(
 					user,
 					now.onlineTill(),
-					u"status"_q);
+					u"online"_q);
 			}
 		}
 		if (UserId(d.vuser_id()) == session().userId()) {
