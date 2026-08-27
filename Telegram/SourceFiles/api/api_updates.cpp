@@ -2091,6 +2091,20 @@ void Updates::feedUpdate(const MTPUpdate &update) {
 					user,
 					Data::PeerUpdate::Flag::OnlineStatus);
 			}
+			// AyuGram: the server gave us a real, exact time here (not
+			// a vague category) - remember it as ground truth, so if
+			// this user's status later flips to hidden/approximate
+			// (or gets marked hidden-from-me specifically, which our
+			// display logic doesn't special-case), we still have the
+			// real last-confirmed timestamp to fall back to instead
+			// of nothing.
+			if (AyuSettings::getInstance().saveLastSeenDate()
+				&& now.onlineTill() > 0) {
+				LastSeenTracker::Instance().noteActivity(
+					user,
+					now.onlineTill(),
+					u"status"_q);
+			}
 		}
 		if (UserId(d.vuser_id()) == session().userId()) {
 			if (d.vstatus().type() == mtpc_userStatusOffline
