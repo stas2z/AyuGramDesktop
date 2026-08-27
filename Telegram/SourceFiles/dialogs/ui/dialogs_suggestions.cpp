@@ -853,11 +853,17 @@ RecentsController::RecentsController(
 void RecentsController::prepare() {
 	setupDivider();
 
+	auto count = 0;
 	for (const auto &peer : _recent.list) {
+		if (peer->isUser()
+			&& HiddenUsersManager::Instance().isHidden(peer->id)) {
+			continue;
+		}
 		delegate()->peerListAppendRow(std::make_unique<RecentRow>(peer));
+		++count;
 	}
 	delegate()->peerListRefreshRows();
-	setCount(_recent.list.size());
+	setCount(count);
 
 	subscribeToEvents();
 }
