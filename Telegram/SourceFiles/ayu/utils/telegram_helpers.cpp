@@ -509,9 +509,8 @@ QString getLocalizedAt() {
 }
 
 QString formatDateTime(const QDateTime &date) {
-	const auto locale = QLocale::system();
-	const auto datePart = locale.toString(date.date(), QLocale::ShortFormat);
-	const auto timePart = locale.toString(date, "HH:mm:ss");
+	const auto datePart = date.toString("dd.MM.yyyy");
+	const auto timePart = date.toString("hh:mm");
 
 	return datePart + getLocalizedAt() + timePart;
 }
