@@ -93,15 +93,14 @@ QString FormatApproxLastSeen(const LastSeenTracker::Point &point, TimeId now) {
 	}
 	const auto onlineFull = base::unixtime::parse(when);
 	const auto nowFull = base::unixtime::parse(now);
-	const auto locale = QLocale();
 	if (onlineFull.date() == nowFull.date()) {
-		const auto onlineTime = locale.toString(onlineFull.time(), QLocale::ShortFormat);
+		const auto onlineTime = onlineFull.toString("hh:mm");
 		return u"~ "_q + tr::lng_status_lastseen_today(tr::now, lt_time, onlineTime) + suffix;
 	} else if (onlineFull.date().addDays(1) == nowFull.date()) {
-		const auto onlineTime = locale.toString(onlineFull.time(), QLocale::ShortFormat);
+		const auto onlineTime = onlineFull.toString("hh:mm");
 		return u"~ "_q + tr::lng_status_lastseen_yesterday(tr::now, lt_time, onlineTime) + suffix;
 	}
-	const auto date = locale.toString(onlineFull.date(), QLocale::ShortFormat);
+	const auto date = onlineFull.toString("dd.MM.yyyy");
 	return u"~ "_q + tr::lng_status_lastseen_date(tr::now, lt_date, date) + suffix;
 }
 
@@ -528,15 +527,14 @@ QString OnlineText(
 	}
 	const auto onlineFull = base::unixtime::parse(till);
 	const auto nowFull = base::unixtime::parse(now);
-	const auto locale = QLocale();
 	if (onlineFull.date() == nowFull.date()) {
-		const auto onlineTime = locale.toString(onlineFull.time(), QLocale::ShortFormat);
+		const auto onlineTime = onlineFull.toString("hh:mm");
 		return tr::lng_status_lastseen_today(tr::now, lt_time, onlineTime);
 	} else if (onlineFull.date().addDays(1) == nowFull.date()) {
-		const auto onlineTime = locale.toString(onlineFull.time(), QLocale::ShortFormat);
+		const auto onlineTime = onlineFull.toString("hh:mm");
 		return tr::lng_status_lastseen_yesterday(tr::now, lt_time, onlineTime);
 	}
-	const auto date = locale.toString(onlineFull.date(), QLocale::ShortFormat);
+	const auto date = onlineFull.toString("dd.MM.yyyy");
 	return tr::lng_status_lastseen_date(tr::now, lt_date, date);
 }
 
@@ -574,16 +572,15 @@ QString OnlineTextFull(not_null<UserData*> user, TimeId now) {
 	const auto &settings = AyuSettings::getInstance();
 	const auto onlineFull = base::unixtime::parse(till);
 	const auto nowFull = base::unixtime::parse(now);
-	const auto locale = QLocale();
 	if (onlineFull.date() == nowFull.date()) {
-		const auto onlineTime = locale.toString(onlineFull.time(), settings.showMessageSeconds() ? QLocale::LongFormat : QLocale::ShortFormat);
+		const auto onlineTime = onlineFull.toString(settings.showMessageSeconds() ? "hh:mm:ss" : "hh:mm");
 		return tr::lng_status_lastseen_today(tr::now, lt_time, onlineTime);
 	} else if (onlineFull.date().addDays(1) == nowFull.date()) {
-		const auto onlineTime = locale.toString(onlineFull.time(), settings.showMessageSeconds() ? QLocale::LongFormat : QLocale::ShortFormat);
+		const auto onlineTime = onlineFull.toString(settings.showMessageSeconds() ? "hh:mm:ss" : "hh:mm");
 		return tr::lng_status_lastseen_yesterday(tr::now, lt_time, onlineTime);
 	}
-	const auto date = locale.toString(onlineFull.date(), QLocale::ShortFormat);
-	const auto time = locale.toString(onlineFull.time(), settings.showMessageSeconds() ? QLocale::LongFormat : QLocale::ShortFormat);
+	const auto date = onlineFull.toString("dd.MM.yyyy");
+	const auto time = onlineFull.toString(settings.showMessageSeconds() ? "hh:mm:ss" : "hh:mm");
 	return tr::lng_status_lastseen_date_time(tr::now, lt_date, date, lt_time, time);
 }
 
