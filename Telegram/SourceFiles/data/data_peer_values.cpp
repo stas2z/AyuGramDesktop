@@ -580,7 +580,7 @@ QString OnlineTextFull(not_null<UserData*> user, TimeId now) {
 		return tr::lng_status_lastseen_yesterday(tr::now, lt_time, onlineTime);
 	}
 	const auto date = onlineFull.date().toString("dd.MM.yyyy");
-	const auto time = locale.toString(onlineFull.time(), settings.showMessageSeconds() ? QLocale::LongFormat : QLocale::ShortFormat);
+	const auto time = onlineFull.time().toString(settings.showMessageSeconds() ? "hh:mm:ss" : "hh:mm");
 	return tr::lng_status_lastseen_date_time(tr::now, lt_date, date, lt_time, time);
 }
 
