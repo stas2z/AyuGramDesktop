@@ -60,9 +60,11 @@ jobs:
           tlottie = source.split("FROM patches AS tlottie\n", 1)[1].split("\nFROM ", 1)[0]
           dockerfile = (
               "# syntax=docker/dockerfile:1\n"
-              "ARG BASE_IMAGE\n"
+              "ARG BASE_IMAGE=ghcr.io/telegramdesktop/tdesktop/centos_env:latest\n"
               "FROM ${BASE_IMAGE} AS builder\n"
-              "FROM builder AS patches\n" + patches + "\n"
+              "FROM builder AS patches\n"
+              "USER root\n"
+              "WORKDIR /opt/ayugram-ci\n" + patches + "\n"
               "FROM patches AS tlottie\n" + tlottie + "\n"
               "FROM builder\n"
               "COPY --from=tlottie /usr/src/tlottie-cache /\n"
