@@ -52,14 +52,37 @@ jobs:
 
           docker pull "$IMAGE"
 
+          python3 - <<'PYEOF'
+          from pathlib import Path
+
+          source = Path("Telegram/build/docker/centos_env/Dockerfile").read_text()
+          patches = source.split("FROM builder AS patches\n", 1)[1].split("\nFROM ", 1)[0]
+          tlottie = source.split("FROM patches AS tlottie\n", 1)[1].split("\nFROM ", 1)[0]
+          dockerfile = (
+              "# syntax=docker/dockerfile:1\n"
+              "ARG BASE_IMAGE\n"
+              "FROM ${BASE_IMAGE} AS builder\n"
+              "FROM builder AS patches\n" + patches + "\n"
+              "FROM patches AS tlottie\n" + tlottie + "\n"
+              "FROM builder\n"
+              "COPY --from=tlottie /usr/src/tlottie-cache /\n"
+          )
+          Path("/tmp/ayugram-build.Dockerfile").write_text(dockerfile)
+          PYEOF
+
+          docker build \
+            --build-arg BASE_IMAGE="$IMAGE" \
+            -f /tmp/ayugram-build.Dockerfile \
+            -t ayugram-build-env:ci .
           DIGEST="$(
-            docker inspect \
-              --format='{{index .RepoDigests 0}}' \
-              "$IMAGE" \
-            | sha256sum \
+            {
+              docker inspect --format='{{.Id}}' "$IMAGE"
+              cat /tmp/ayugram-build.Dockerfile
+            } | sha256sum \
             | cut -c1-16
           )"
 
+          echo "IMAGE=ayugram-build-env:ci" >> "$GITHUB_ENV"
           echo "key=$DIGEST" >> "$GITHUB_OUTPUT"
           echo "Docker environment key: $DIGEST"
 
