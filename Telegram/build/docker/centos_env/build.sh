@@ -52,7 +52,7 @@ if [ -f ../out/build.ninja ]; then
 	head -10 /tmp/ninja_explain.log
 fi
 
-cmake --build ../out --config "${CONFIG:-Release}"
+cmake --build ../out --config "${CONFIG:-Release}" ${KEEP_GOING:+-- -k 0}
 
 echo "=== ccache per-file results ==="
 python3 - "$CCACHE_LOGFILE" <<'PYEOF'
